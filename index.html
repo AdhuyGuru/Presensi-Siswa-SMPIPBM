@@ -7,8 +7,8 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Library QR Code Scanner -->
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <!-- MENGGUNAKAN VERSI STABIL 2.3.8 UNTUK MENCEGAH BUG KAMERA MATI -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -18,22 +18,20 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         
+        /* STYLING SCANNER YANG AMAN DARI CRASH */
         #reader {
-            width: 100% !important;
-            border: 2px dashed #cbd5e1 !important;
+            width: 100%;
+            border: 2px dashed #cbd5e1;
             border-radius: 16px;
             background-color: #ffffff;
             overflow: hidden;
-            padding: 1.5rem 1rem !important;
+            padding: 1rem;
             box-sizing: border-box;
             text-align: center;
-            min-height: 250px;
         }
 
         #reader video {
-            width: 100% !important;
             border-radius: 12px;
-            object-fit: cover !important;
             margin: 0 auto;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
@@ -42,23 +40,18 @@
             background-color: #2563eb !important; 
             color: white !important;
             border: none !important;
-            padding: 12px 24px !important;
+            padding: 10px 20px !important;
             border-radius: 8px !important;
-            font-size: 15px !important;
+            font-size: 14px !important;
             font-weight: 600 !important;
             cursor: pointer !important;
-            display: block !important;
-            margin: 15px auto !important; 
+            margin: 10px auto !important; 
             box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2) !important;
             transition: all 0.2s ease-in-out !important;
-            width: 80% !important;
-            max-width: 300px !important;
         }
         
-        #reader button:hover { background-color: #1d4ed8 !important; transform: translateY(-1px); }
-
-        #reader a { color: #64748b !important; text-decoration: underline !important; font-size: 14px !important; display: inline-block !important; margin-top: 10px !important; font-weight: 500 !important; }
-        #reader a:hover { color: #334155 !important; }
+        #reader button:hover { background-color: #1d4ed8 !important; }
+        #reader a { display: none !important; } /* Sembunyikan link "Scan an Image File" */
         #reader__dashboard_section_csr span { display: none !important; }
 
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #2563eb; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
@@ -76,19 +69,17 @@
 
     <main class="w-full max-w-4xl relative">
         
-        <div id="viewScanner" class="bg-white p-6 md:p-8 rounded-2xl shadow-xl shadow-blue-900/5 border border-gray-100 max-w-md mx-auto transition-all">
-            
+        <!-- AREA SCANNER -->
+        <div id="viewScanner" class="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-gray-100 max-w-md mx-auto transition-all">
             <div class="mb-6 text-center">
                 <h2 class="text-xl font-bold text-gray-800 mb-1">Silakan Scan QR Code</h2>
                 <p class="text-sm text-gray-500">Arahkan kamera ke QR Code pada ID Tag Anda</p>
             </div>
             
-            <!-- Wadah Scanner -->
             <div id="reader" class="mb-2 relative"></div>
             
-            <!-- Tombol Darurat jika Scanner Nyangkut -->
-            <div class="text-center mb-6 mt-2">
-                <button onclick="inisialisasiScanner()" class="text-xs text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full font-semibold hover:bg-blue-100 transition">↻ Restart Kamera / Sulit Scan?</button>
+            <div class="text-center mb-6 mt-3">
+                <button onclick="inisialisasiScanner()" class="text-xs text-blue-600 bg-blue-50 px-4 py-2 rounded-full font-semibold hover:bg-blue-100 transition shadow-sm">↻ Restart Kamera</button>
             </div>
             
             <div class="relative flex py-4 items-center">
@@ -97,27 +88,21 @@
                 <div class="flex-grow border-t border-gray-200"></div>
             </div>
 
-            <!-- Manual Input -->
             <div class="mt-2">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Input NIS Manual (Jika QR Rusak)</label>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Input NIS Manual</label>
                 <div class="flex gap-2">
-                    <input type="number" id="inputNis" placeholder="Masukkan NIS..." class="flex-1 rounded-xl border-gray-300 border px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-gray-50 text-gray-800">
-                    <button onclick="prosesSiswaManual()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-md shadow-blue-600/20 transition-all flex items-center gap-2">
-                        <span>Kirim</span>
-                    </button>
+                    <input type="number" id="inputNis" placeholder="Masukkan NIS..." class="flex-1 rounded-xl border-gray-300 border px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50 text-gray-800">
+                    <button onclick="prosesSiswaManual()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-md transition-all">Kirim</button>
                 </div>
             </div>
 
             <div class="mt-8 flex justify-between items-center border-t border-gray-100 pt-5">
-                <button onclick="cekRekapSiswa()" class="text-blue-600 hover:text-blue-800 text-sm font-semibold flex items-center gap-1.5 transition">
-                    🔍 Riwayat Saya
-                </button>
-                <button onclick="loginGuru()" class="text-gray-400 hover:text-gray-700 text-sm font-semibold flex items-center gap-1.5 transition">
-                    🔒 Area Guru
-                </button>
+                <button onclick="cekRekapSiswa()" class="text-blue-600 hover:text-blue-800 text-sm font-semibold transition">🔍 Riwayat Saya</button>
+                <button onclick="loginGuru()" class="text-gray-400 hover:text-gray-700 text-sm font-semibold transition">🔒 Area Guru</button>
             </div>
         </div>
 
+        <!-- DASHBOARD GURU -->
         <div id="viewDashboard" class="hidden bg-white p-4 md:p-8 rounded-2xl shadow-xl border border-gray-100 w-full animate-fade-in">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b pb-4 gap-4">
                 <div>
@@ -125,45 +110,36 @@
                     <p class="text-sm text-gray-500" id="tglDashboard">Hari ini</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <button onclick="bukaModalPengaturan()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 px-4 py-2 rounded-lg font-semibold shadow-sm text-sm transition">
-                        ⚙️ Pengaturan Waktu
-                    </button>
-                    <button onclick="bukaModalManual()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold shadow-sm text-sm transition">
-                        + Input Kehadiran
-                    </button>
-                    <button onclick="logoutGuru()" class="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-lg font-semibold shadow-sm text-sm transition">
-                        Tutup Area Guru
-                    </button>
+                    <button onclick="bukaModalPengaturan()" class="bg-gray-100 text-gray-700 border border-gray-300 px-4 py-2 rounded-lg font-semibold text-sm">⚙️ Pengaturan Waktu</button>
+                    <button onclick="bukaModalManual()" class="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold text-sm">+ Input Kehadiran</button>
+                    <button onclick="logoutGuru()" class="bg-red-50 text-red-600 px-4 py-2 rounded-lg font-semibold text-sm">Tutup Area Guru</button>
                 </div>
             </div>
 
-            <!-- Stats -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100"><p class="text-xs text-blue-600 font-bold uppercase mb-1 tracking-wider">Total Siswa</p><p class="text-2xl font-black text-blue-900" id="statTotal">-</p></div>
-                <div class="bg-green-50 p-4 rounded-xl border border-green-100"><p class="text-xs text-green-600 font-bold uppercase mb-1 tracking-wider">Hadir</p><p class="text-2xl font-black text-green-900" id="statHadir">-</p></div>
-                <div class="bg-orange-50 p-4 rounded-xl border border-orange-100"><p class="text-xs text-orange-600 font-bold uppercase mb-1 tracking-wider">Belum Absen</p><p class="text-2xl font-black text-orange-900" id="statBelum">-</p></div>
-                <div class="bg-red-50 p-4 rounded-xl border border-red-100"><p class="text-xs text-red-600 font-bold uppercase mb-1 tracking-wider">Tidak Hadir</p><p class="text-2xl font-black text-red-900" id="statAbsen">-</p></div>
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100"><p class="text-xs text-blue-600 font-bold uppercase mb-1">Total Siswa</p><p class="text-2xl font-black text-blue-900" id="statTotal">-</p></div>
+                <div class="bg-green-50 p-4 rounded-xl border border-green-100"><p class="text-xs text-green-600 font-bold uppercase mb-1">Hadir</p><p class="text-2xl font-black text-green-900" id="statHadir">-</p></div>
+                <div class="bg-orange-50 p-4 rounded-xl border border-orange-100"><p class="text-xs text-orange-600 font-bold uppercase mb-1">Belum Absen</p><p class="text-2xl font-black text-orange-900" id="statBelum">-</p></div>
+                <div class="bg-red-50 p-4 rounded-xl border border-red-100"><p class="text-xs text-red-600 font-bold uppercase mb-1">Tidak Hadir</p><p class="text-2xl font-black text-red-900" id="statAbsen">-</p></div>
             </div>
 
-            <!-- Filter -->
             <div class="bg-gray-50 p-5 rounded-xl border border-gray-200 mb-6">
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 mb-1">Filter Kelas</label>
-                        <select id="filterKelas" onchange="terapkanFilter()" class="w-full rounded-lg border-gray-300 p-2 text-sm border outline-none bg-white">
+                        <select id="filterKelas" onchange="terapkanFilter()" class="w-full rounded-lg border-gray-300 p-2 text-sm border bg-white">
                             <option value="Semua">Semua Kelas</option>
-                            <!-- Pilihan kelas akan diisi otomatis -->
                         </select>
                     </div>
-                    <div><label class="block text-xs font-semibold text-gray-600 mb-1">Tanggal</label><input type="date" id="filterTanggal" onchange="terapkanFilter()" class="w-full rounded-lg border-gray-300 p-2 text-sm border outline-none bg-white"></div>
-                    <div><label class="block text-xs font-semibold text-gray-600 mb-1">Bulan</label><input type="month" id="filterBulan" onchange="terapkanFilter()" class="w-full rounded-lg border-gray-300 p-2 text-sm border outline-none bg-white"></div>
-                    <div><label class="block text-xs font-semibold text-gray-600 mb-1">Cari Nama / NIS</label><input type="text" id="filterNama" onkeyup="terapkanFilter()" placeholder="Ketik..." class="w-full rounded-lg border-gray-300 p-2 text-sm border outline-none bg-white"></div>
+                    <div><label class="block text-xs font-semibold text-gray-600 mb-1">Tanggal</label><input type="date" id="filterTanggal" onchange="terapkanFilter()" class="w-full rounded-lg border-gray-300 p-2 text-sm border bg-white"></div>
+                    <div><label class="block text-xs font-semibold text-gray-600 mb-1">Bulan</label><input type="month" id="filterBulan" onchange="terapkanFilter()" class="w-full rounded-lg border-gray-300 p-2 text-sm border bg-white"></div>
+                    <div><label class="block text-xs font-semibold text-gray-600 mb-1">Cari Nama / NIS</label><input type="text" id="filterNama" onkeyup="terapkanFilter()" placeholder="Ketik..." class="w-full rounded-lg border-gray-300 p-2 text-sm border bg-white"></div>
                     <div class="flex gap-2">
-                        <button onclick="exportExcel()" class="flex-1 bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg text-sm font-semibold shadow transition">Excel</button>
-                        <button onclick="exportPDF()" class="flex-1 bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg text-sm font-semibold shadow transition">PDF</button>
+                        <button onclick="exportExcel()" class="flex-1 bg-green-600 text-white p-2 rounded-lg text-sm font-semibold">Excel</button>
+                        <button onclick="exportPDF()" class="flex-1 bg-red-600 text-white p-2 rounded-lg text-sm font-semibold">PDF</button>
                     </div>
                 </div>
-                <div class="mt-3 text-right"><button onclick="resetFilter()" class="text-xs text-blue-600 hover:text-blue-800 font-semibold hover:underline">⟳ Reset Semua Filter</button></div>
+                <div class="mt-3 text-right"><button onclick="resetFilter()" class="text-xs text-blue-600 font-semibold hover:underline">⟳ Reset Semua Filter</button></div>
             </div>
 
             <div class="mb-8 bg-white p-4 rounded-xl border border-gray-100 shadow-sm"><canvas id="grafikKehadiran" height="80"></canvas></div>
@@ -178,69 +154,54 @@
             </div>
         </div>
 
+        <!-- MODAL MANUAL -->
         <div id="modalManual" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
             <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
                 <h3 class="text-xl font-bold mb-4 text-gray-800 border-b pb-3">Input Kehadiran Manual</h3>
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal</label>
-                        <input type="date" id="inTanggal" class="w-full rounded-lg border-gray-300 p-2.5 border outline-none bg-white">
+                        <input type="date" id="inTanggal" class="w-full rounded-lg border-gray-300 p-2 border bg-white">
                     </div>
-                    
-                    <!-- DIBUAT DINAMIS MENGGUNAKAN DROPDOWN -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Pilih Kelas</label>
-                        <select id="inKelas" onchange="updateDropdownSiswa()" class="w-full rounded-lg border-gray-300 p-2.5 border outline-none bg-white font-medium">
+                        <select id="inKelas" onchange="updateDropdownSiswa()" class="w-full rounded-lg border-gray-300 p-2 border bg-white font-medium">
                             <option value="">-- Pilih Kelas --</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Pilih Nama Siswa</label>
-                        <select id="inNama" onchange="autoIsiNis()" class="w-full rounded-lg border-gray-300 p-2.5 border outline-none bg-white font-medium" disabled>
+                        <select id="inNama" onchange="autoIsiNis()" class="w-full rounded-lg border-gray-300 p-2 border bg-white font-medium" disabled>
                             <option value="">-- Pilih Kelas Dulu --</option>
                         </select>
                     </div>
-                    <!-- /DIBUAT DINAMIS -->
-
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">NIS (Otomatis)</label>
-                        <input type="text" id="inNis" class="w-full rounded-lg border-gray-300 p-2.5 border bg-gray-100 cursor-not-allowed text-gray-600 font-bold" readonly>
+                        <input type="text" id="inNis" class="w-full rounded-lg border-gray-300 p-2 border bg-gray-100 cursor-not-allowed font-bold" readonly>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Keterangan</label>
-                        <select id="inKet" class="w-full rounded-lg border-gray-300 p-2.5 border outline-none bg-white font-bold text-blue-700">
-                            <option value="Hadir">Hadir</option>
-                            <option value="Sakit">Sakit</option>
-                            <option value="Izin">Izin</option>
-                            <option value="Alpha">Alpha</option>
+                        <select id="inKet" class="w-full rounded-lg border-gray-300 p-2 border bg-white font-bold text-blue-700">
+                            <option value="Hadir">Hadir</option><option value="Sakit">Sakit</option><option value="Izin">Izin</option><option value="Alpha">Alpha</option>
                         </select>
                     </div>
                 </div>
                 <div class="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-100">
-                    <button onclick="tutupModalManual()" class="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition">Batal</button>
-                    <button onclick="simpanManual()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md transition">Simpan Data</button>
+                    <button onclick="tutupModalManual()" class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-semibold">Batal</button>
+                    <button onclick="simpanManual()" class="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-bold">Simpan Data</button>
                 </div>
             </div>
         </div>
 
+        <!-- MODAL PENGATURAN -->
         <div id="modalPengaturan" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
             <div class="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl relative max-h-[90vh] overflow-y-auto">
                 <h3 class="text-xl font-bold mb-1 text-gray-800">Pengaturan Waktu Absensi</h3>
                 <p class="text-sm text-gray-500 mb-4 border-b pb-3">Atur batas waktu terlambat dan jam mulai kepulangan.</p>
-                
-                <div class="space-y-3" id="containerPengaturan">
-                    <!-- Row Header -->
-                    <div class="grid grid-cols-3 gap-2 font-bold text-sm text-gray-700 border-b pb-2">
-                        <div>Hari</div>
-                        <div title="Siswa dianggap terlambat di atas jam ini">Mulai Terlambat</div>
-                        <div title="Siswa diizinkan absen pulang mulai jam ini">Mulai Pulang</div>
-                    </div>
-                    <!-- JavaScript akan mengisi baris hari disini -->
-                </div>
-
+                <div class="space-y-3" id="containerPengaturan"></div>
                 <div class="flex justify-between items-center mt-6 pt-4 border-t border-gray-100">
-                    <button onclick="tutupModalPengaturan()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition">Batal</button>
-                    <button onclick="simpanPengaturan()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md transition">Simpan Pengaturan</button>
+                    <button onclick="tutupModalPengaturan()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold">Batal</button>
+                    <button onclick="simpanPengaturan()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold">Simpan Pengaturan</button>
                 </div>
             </div>
         </div>
@@ -249,16 +210,16 @@
 
     <script>
         // =========================================================================
-        // 🔴🔴🔴 MASUKKAN URL GOOGLE SCRIPT ANDA DI BAWAH INI 🔴🔴🔴
+        // 🔴 PASTE URL GOOGLE SCRIPT ANDA DI BAWAH INI
         // =========================================================================
-        const GAS_URL = "URL_GOOGLE_SCRIPT_ANDA_DISINI"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxwGXsAClUyltVOnVuBkWfgXZp6HvdIZTXm9MqP8yKP1WRHaT7MLehNSCX78bDxqJ2Y2A/exec"; 
         
         let html5QrcodeScanner = null;
         let chartInstance = null;
         let dataMasterHadir = []; 
         let dataMasterSiswa = [];
+        let isProcessing = false; // KUNCI MENCEGAH SCAN DOBEL (PENTING!)
 
-        // Fungsi fetch helper dengan Error Handling
         async function callAPI(action, data = {}) {
             try {
                 const response = await fetch(GAS_URL, {
@@ -266,50 +227,44 @@
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({ action: action, data: data })
                 });
-                
-                if (!response.ok) throw new Error("Gagal terhubung ke server (Network Error)");
-                const result = await response.json();
-                return result;
+                if (!response.ok) throw new Error("Gagal terhubung ke server");
+                return await response.json();
             } catch (error) {
-                console.error("API Error:", error);
-                Swal.close(); // Hentikan loading spinner
-                Swal.fire('Koneksi Gagal', 'Gagal memproses data. Pastikan URL Google Script sudah benar dan internet lancar.', 'error');
+                Swal.close();
+                Swal.fire('Koneksi Gagal', 'Gagal memproses data ke server. Pastikan URL Script benar dan jaringan stabil.', 'error');
                 throw error;
             }
         }
 
         // =========================================================================
-        // LOGIKA SCANNER & SISWA
+        // LOGIKA SCANNER AMAN (ANTI CRASH)
         // =========================================================================
         function inisialisasiScanner() {
             if(html5QrcodeScanner) {
                 try { html5QrcodeScanner.clear(); } catch(e){}
             }
 
-            // Pengecekan keamanan HTTPS / Webview
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                document.getElementById("reader").innerHTML = `
-                    <div class="p-6 text-red-600 font-bold bg-red-50 rounded-lg">
-                        ⚠️ Kamera Diblokir Sistem!<br><br>
-                        <span class="text-sm font-normal text-gray-700">Sistem gagal mengakses modul kamera. Hal ini terjadi karena Anda membuka link ini dari aplikasi WhatsApp/Instagram, atau browser menolak akses. <br><br><b>SOLUSI: Buka link ini langsung menggunakan Google Chrome atau Safari.</b></span>
-                    </div>`;
-                return;
-            }
-
-            html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
-                fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0, 
-                showTorchButtonIfSupported: true, rememberLastUsedCamera: true
-            }, false);
+            html5QrcodeScanner = new Html5QrcodeScanner(
+                "reader",
+                { 
+                    fps: 10, 
+                    qrbox: { width: 250, height: 250 },
+                    rememberLastUsedCamera: true
+                }, 
+                false // Hide logs
+            );
             
             html5QrcodeScanner.render(onScanSuccess, onScanFailure);
         }
 
         function onScanFailure(error) {
-            // Abaikan peringatan gagal deteksi frame per frame
+            // Error deteksi frame per frame diabaikan saja
         }
 
         function onScanSuccess(decodedText, decodedResult) {
-            if (html5QrcodeScanner) html5QrcodeScanner.pause(true);
+            // JIKA SEDANG MEMPROSES API, ABAIKAN SCAN BARU (Kamera Tetap Nyala)
+            if (isProcessing) return; 
+            isProcessing = true; // Kunci sistem
             
             Swal.fire({
                 title: 'Memproses...', text: 'Mencatat kehadiran...',
@@ -331,13 +286,15 @@
                                     <p class="mt-2 pt-2 border-t"><b>Status:</b> <span style="color:${color}; font-weight:900; font-size:1.1em">${response.status}</span></p>
                                 </div>`,
                             confirmButtonColor: '#2563eb', confirmButtonText: 'Lanjut Scan'
-                        }).then(() => { if (html5QrcodeScanner) html5QrcodeScanner.resume(); });
+                        }).then(() => { isProcessing = false; }); // Buka kunci saat ditutup
                     } else {
                         Swal.fire({
                             icon: 'error', title: 'Gagal', text: response.message,
                             confirmButtonColor: '#d33', confirmButtonText: 'Tutup'
-                        }).then(() => { if (html5QrcodeScanner) html5QrcodeScanner.resume(); });
+                        }).then(() => { isProcessing = false; }); // Buka kunci
                     }
+                }).catch(() => {
+                    isProcessing = false; // Buka kunci walau error
                 });
         }
 
@@ -372,15 +329,15 @@
             });
         }
 
-        // =========================================================================
-        // LOGIKA DASHBOARD GURU
-        // =========================================================================
         window.onload = function() {
             inisialisasiScanner();
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('tglDashboard').innerText = new Date().toLocaleDateString('id-ID', options);
         };
 
+        // =========================================================================
+        // DASHBOARD GURU
+        // =========================================================================
         function loginGuru() {
             Swal.fire({
                 title: 'Akses Guru', input: 'password', inputLabel: 'Password Admin',
@@ -396,7 +353,7 @@
                         loadDataSiswa();
                         loadDashboardData();
                     } else {
-                        Swal.fire('Akses Ditolak', 'Password salah!', 'error');
+                        Swal.fire('Ditolak', 'Password salah!', 'error');
                     }
                 }
             });
@@ -414,7 +371,6 @@
         }
 
         function setupFilterDropdown() {
-            // Ambil kelas unik dari master data
             let unikKelas = [...new Set(dataMasterSiswa.map(item => item.kelas))].sort();
             let selectFilter = document.getElementById('filterKelas');
             let selectInputKelas = document.getElementById('inKelas');
@@ -429,7 +385,6 @@
 
         function loadDashboardData() {
             Swal.fire({title: 'Memuat Data...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-            
             callAPI('getDashboardData').then(response => {
                 Swal.close();
                 if(response.success) {
@@ -473,7 +428,111 @@
         }
 
         // =========================================================================
-        // FITUR FILTER & EXPORT
+        // FITUR INPUT MANUAL & PENGATURAN
+        // =========================================================================
+        function bukaModalManual() {
+            document.getElementById('modalManual').classList.remove('hidden');
+            document.getElementById('inTanggal').value = new Date().toISOString().split('T')[0];
+            document.getElementById('inKelas').value = '';
+            document.getElementById('inNama').innerHTML = '<option value="">-- Pilih Kelas Dulu --</option>';
+            document.getElementById('inNama').disabled = true;
+            document.getElementById('inNis').value = '';
+            document.getElementById('inKet').value = 'Hadir';
+        }
+        function tutupModalManual() { document.getElementById('modalManual').classList.add('hidden'); }
+
+        function updateDropdownSiswa() {
+            let kelasTerpilih = document.getElementById('inKelas').value;
+            let selectNama = document.getElementById('inNama');
+            document.getElementById('inNis').value = '';
+            selectNama.innerHTML = '<option value="">-- Pilih Nama Siswa --</option>';
+
+            if(!kelasTerpilih) { selectNama.disabled = true; return; }
+
+            let siswaDiKelas = dataMasterSiswa.filter(s => s.kelas === kelasTerpilih);
+            siswaDiKelas.forEach(s => {
+                let opt = document.createElement('option');
+                opt.value = s.nis; opt.text = s.nama;
+                selectNama.add(opt);
+            });
+            selectNama.disabled = false;
+        }
+
+        function autoIsiNis() {
+            document.getElementById('inNis').value = document.getElementById('inNama').value;
+        }
+
+        function simpanManual() {
+            let selectNama = document.getElementById('inNama');
+            
+            // Validasi Pilihan
+            if(selectNama.selectedIndex <= 0 || selectNama.value === "") {
+                return Swal.fire('Error', 'Pilih nama siswa terlebih dahulu', 'error');
+            }
+
+            let data = { 
+                tanggal: document.getElementById('inTanggal').value, 
+                nis: document.getElementById('inNis').value, 
+                nama: selectNama.options[selectNama.selectedIndex].text, 
+                kelas: document.getElementById('inKelas').value, 
+                keterangan: document.getElementById('inKet').value 
+            };
+            
+            if(!data.tanggal || !data.nis || !data.nama) return Swal.fire('Error', 'Lengkapi data', 'error');
+
+            Swal.fire({title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+            callAPI('inputManual', data).then(res => {
+                if(res.success) { Swal.fire('Berhasil', 'Tersimpan', 'success'); tutupModalManual(); loadDashboardData(); }
+            });
+        }
+
+        function hapusRecord(id) {
+            Swal.fire({ title: 'Hapus data ini?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Hapus!' })
+            .then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({title: 'Menghapus...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+                    callAPI('deleteRecord', { id: id }).then(res => {
+                        if(res.success) { Swal.fire('Terhapus!', '', 'success'); loadDashboardData(); }
+                    });
+                }
+            });
+        }
+
+        const NAMA_HARI = { 1: 'Senin', 2: 'Selasa', 3: 'Rabu', 4: 'Kamis', 5: 'Jumat', 6: 'Sabtu', 0: 'Minggu' };
+        function bukaModalPengaturan() {
+            Swal.fire({title: 'Memuat...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+            callAPI('getSettings').then(res => {
+                Swal.close();
+                if(res.success) {
+                    let container = document.getElementById('containerPengaturan');
+                    container.innerHTML = `<div class="grid grid-cols-3 gap-2 font-bold text-sm text-gray-700 border-b pb-2"><div>Hari</div><div>Batas Masuk</div><div>Mulai Pulang</div></div>`;
+                    
+                    [1,2,3,4,5,6,0].forEach(idHari => {
+                        let dataSet = res.settings[idHari] || { batasMasuk: '07:00', jamPulang: '15:00' };
+                        container.innerHTML += `
+                            <div class="grid grid-cols-3 gap-2 items-center mb-2">
+                                <div class="font-medium text-gray-600">${NAMA_HARI[idHari]}</div>
+                                <div><input type="time" id="setMasuk_${idHari}" value="${dataSet.batasMasuk}" class="w-full border rounded p-1.5 outline-none"></div>
+                                <div><input type="time" id="setPulang_${idHari}" value="${dataSet.jamPulang}" class="w-full border rounded p-1.5 outline-none"></div>
+                            </div>`;
+                    });
+                    document.getElementById('modalPengaturan').classList.remove('hidden');
+                }
+            });
+        }
+
+        function tutupModalPengaturan() { document.getElementById('modalPengaturan').classList.add('hidden'); }
+        function simpanPengaturan() {
+            let payload = {};
+            [1,2,3,4,5,6,0].forEach(idHari => {
+                payload[idHari] = { batasMasuk: document.getElementById(`setMasuk_${idHari}`).value, jamPulang: document.getElementById(`setPulang_${idHari}`).value };
+            });
+            Swal.fire({title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+            callAPI('saveSettings', payload).then(res => { if(res.success) { Swal.fire('Berhasil', 'Tersimpan', 'success'); tutupModalPengaturan(); } });
+        }
+
+        // =========================================================================
+        // FILTER & EXPORT & CHART
         // =========================================================================
         function terapkanFilter() {
             let fKelas = document.getElementById('filterKelas').value; 
@@ -498,152 +557,17 @@
         }
 
         function exportExcel() {
-            let wb = XLSX.utils.table_to_book(document.getElementById("tabelData"), {sheet:"Laporan Kehadiran"});
-            XLSX.writeFile(wb, "Laporan_Kehadiran_Siswa.xlsx");
+            let wb = XLSX.utils.table_to_book(document.getElementById("tabelData"), {sheet:"Laporan"});
+            XLSX.writeFile(wb, "Laporan_Kehadiran.xlsx");
         }
 
         function exportPDF() {
             const { jsPDF } = window.jspdf; const doc = new jsPDF('landscape');
-            doc.setFontSize(16); doc.text("Laporan Presensi Kehadiran Siswa", 14, 15);
-            doc.setFontSize(10); doc.setTextColor(100); doc.text("SMP Islam Plus Baitul Maal", 14, 21);
+            doc.setFontSize(16); doc.text("Laporan Kehadiran", 14, 15);
             doc.autoTable({ html: '#tabelData', startY: 25, theme: 'grid', styles: { fontSize: 8 }, headStyles: { fillColor: [37, 99, 235] } });
-            doc.save('Laporan_Kehadiran_Siswa.pdf');
+            doc.save('Laporan_Kehadiran.pdf');
         }
 
-        // =========================================================================
-        // FITUR INPUT MANUAL BERBASIS KELAS (BARU)
-        // =========================================================================
-        function bukaModalManual() {
-            document.getElementById('modalManual').classList.remove('hidden');
-            document.getElementById('inTanggal').value = new Date().toISOString().split('T')[0];
-            document.getElementById('inKelas').value = '';
-            document.getElementById('inNama').innerHTML = '<option value="">-- Pilih Kelas Dulu --</option>';
-            document.getElementById('inNama').disabled = true;
-            document.getElementById('inNis').value = '';
-            document.getElementById('inKet').value = 'Hadir';
-        }
-        function tutupModalManual() { document.getElementById('modalManual').classList.add('hidden'); }
-
-        function updateDropdownSiswa() {
-            let kelasTerpilih = document.getElementById('inKelas').value;
-            let selectNama = document.getElementById('inNama');
-            let inputNis = document.getElementById('inNis');
-            
-            selectNama.innerHTML = '<option value="">-- Pilih Nama Siswa --</option>';
-            inputNis.value = '';
-
-            if(!kelasTerpilih) {
-                selectNama.disabled = true;
-                return;
-            }
-
-            // Filter siswa berdasarkan kelas
-            let siswaDiKelas = dataMasterSiswa.filter(s => s.kelas === kelasTerpilih);
-            siswaDiKelas.forEach(s => {
-                let opt = document.createElement('option');
-                opt.value = s.nis; // Simpan NIS sebagai value
-                opt.text = s.nama;
-                selectNama.add(opt);
-            });
-            selectNama.disabled = false;
-        }
-
-        function autoIsiNis() {
-            let selectNama = document.getElementById('inNama');
-            let nis = selectNama.value; // Value dari dropdown adalah NIS
-            document.getElementById('inNis').value = nis;
-        }
-
-        function simpanManual() {
-            let selectNama = document.getElementById('inNama');
-            
-            let data = { 
-                tanggal: document.getElementById('inTanggal').value, 
-                nis: document.getElementById('inNis').value, 
-                nama: selectNama.options[selectNama.selectedIndex].text, 
-                kelas: document.getElementById('inKelas').value, 
-                keterangan: document.getElementById('inKet').value 
-            };
-            
-            if(!data.tanggal || !data.nis || data.nama.includes('--')) return Swal.fire('Error', 'Lengkapi data terlebih dahulu', 'error');
-
-            Swal.fire({title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-            callAPI('inputManual', data).then(res => {
-                if(res.success) { Swal.fire('Berhasil', 'Tersimpan', 'success'); tutupModalManual(); loadDashboardData(); }
-            });
-        }
-
-        function hapusRecord(id) {
-            Swal.fire({
-                title: 'Yakin hapus data ini?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Ya, Hapus!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    Swal.fire({title: 'Menghapus...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-                    callAPI('deleteRecord', { id: id }).then(res => {
-                        if(res.success) { Swal.fire('Terhapus!', '', 'success'); loadDashboardData(); }
-                    });
-                }
-            });
-        }
-
-        // =========================================================================
-        // FITUR PENGATURAN JAM DINAMIS (BARU)
-        // =========================================================================
-        const NAMA_HARI = { 1: 'Senin', 2: 'Selasa', 3: 'Rabu', 4: 'Kamis', 5: 'Jumat', 6: 'Sabtu', 0: 'Minggu' };
-
-        function bukaModalPengaturan() {
-            Swal.fire({title: 'Memuat Pengaturan...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-            
-            callAPI('getSettings').then(res => {
-                Swal.close();
-                if(res.success) {
-                    let container = document.getElementById('containerPengaturan');
-                    // Reset isi container kecuali header
-                    container.innerHTML = `
-                        <div class="grid grid-cols-3 gap-2 font-bold text-sm text-gray-700 border-b pb-2">
-                            <div>Hari</div><div>Batas Masuk</div><div>Mulai Pulang</div>
-                        </div>`;
-                    
-                    // Render baris untuk Senin (1) s/d Minggu (0)
-                    [1,2,3,4,5,6,0].forEach(idHari => {
-                        let dataSet = res.settings[idHari] || { batasMasuk: '07:00', jamPulang: '15:00' };
-                        let htmlRow = `
-                            <div class="grid grid-cols-3 gap-2 items-center mb-2">
-                                <div class="font-medium text-gray-600">${NAMA_HARI[idHari]}</div>
-                                <div><input type="time" id="setMasuk_${idHari}" value="${dataSet.batasMasuk}" class="w-full border border-gray-300 rounded p-1.5 outline-none"></div>
-                                <div><input type="time" id="setPulang_${idHari}" value="${dataSet.jamPulang}" class="w-full border border-gray-300 rounded p-1.5 outline-none"></div>
-                            </div>
-                        `;
-                        container.innerHTML += htmlRow;
-                    });
-                    document.getElementById('modalPengaturan').classList.remove('hidden');
-                }
-            });
-        }
-
-        function tutupModalPengaturan() { document.getElementById('modalPengaturan').classList.add('hidden'); }
-
-        function simpanPengaturan() {
-            let payload = {};
-            [1,2,3,4,5,6,0].forEach(idHari => {
-                payload[idHari] = {
-                    batasMasuk: document.getElementById(`setMasuk_${idHari}`).value,
-                    jamPulang: document.getElementById(`setPulang_${idHari}`).value
-                };
-            });
-
-            Swal.fire({title: 'Menyimpan Pengaturan...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-            callAPI('saveSettings', payload).then(res => {
-                if(res.success) {
-                    Swal.fire('Berhasil', 'Pengaturan waktu berhasil disimpan', 'success');
-                    tutupModalPengaturan();
-                }
-            });
-        }
-
-        // =========================================================================
-        // GRAFIK
-        // =========================================================================
         function renderChart(data) {
             let ctx = document.getElementById('grafikKehadiran').getContext('2d');
             if(chartInstance) chartInstance.destroy();
@@ -669,11 +593,11 @@
                 data: {
                     labels: labels,
                     datasets: [
-                        { label: 'Tepat Waktu', data: labels.map(l => counts[l].hadir), backgroundColor: '#22c55e', borderRadius: 4 },
-                        { label: 'Terlambat', data: labels.map(l => counts[l].telat), backgroundColor: '#eab308', borderRadius: 4 },
-                        { label: 'Sakit', data: labels.map(l => counts[l].sakit), backgroundColor: '#3b82f6', borderRadius: 4 },
-                        { label: 'Izin', data: labels.map(l => counts[l].izin), backgroundColor: '#a855f7', borderRadius: 4 },
-                        { label: 'Alpha', data: labels.map(l => counts[l].alpha), backgroundColor: '#ef4444', borderRadius: 4 }
+                        { label: 'Tepat Waktu', data: labels.map(l => counts[l].hadir), backgroundColor: '#22c55e' },
+                        { label: 'Terlambat', data: labels.map(l => counts[l].telat), backgroundColor: '#eab308' },
+                        { label: 'Sakit', data: labels.map(l => counts[l].sakit), backgroundColor: '#3b82f6' },
+                        { label: 'Izin', data: labels.map(l => counts[l].izin), backgroundColor: '#a855f7' },
+                        { label: 'Alpha', data: labels.map(l => counts[l].alpha), backgroundColor: '#ef4444' }
                     ]
                 },
                 options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: {stepSize: 1} } } }
