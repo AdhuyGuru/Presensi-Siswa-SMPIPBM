@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Presensi SMP IP Baitul Maal</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        
+        /* OVERHAUL TAMPILAN SCANNER LIBRARY HTML5-QRCODE */
+        
+        #reader {
+            width: 100% !important;
+            border: 2px dashed #cbd5e1 !important;
+            border-radius: 16px;
+            background-color: #ffffff;
+            overflow: hidden;
+            padding: 1.5rem 1rem !important;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        #reader video {
+            width: 100% !important;
+            border-radius: 12px;
+            object-fit: cover !important;
+            margin: 0 auto;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        #reader button {
+            background-color: #2563eb !important; 
+            color: white !important;
+            border: none !important;
+            padding: 12px 24px !important;
+            border-radius: 8px !important;
+            font-size: 15px !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+            display: block !important;
+            margin: 15px auto !important; 
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2) !important;
+            transition: all 0.2s ease-in-out !important;
+            width: 80% !important;
+            max-width: 300px !important;
+        }
+        
+        #reader button:hover {
+            background-color: #1d4ed8 !important; 
+            transform: translateY(-1px);
+        }
+
+        #reader a {
+            color: #64748b !important;
+            text-decoration: underline !important;
+            font-size: 14px !important;
+            display: inline-block !important;
+            margin-top: 10px !important;
+            font-weight: 500 !important;
+        }
+        
+        #reader a:hover {
+            color: #334155 !important;
+        }
+
+        #reader__dashboard_section_csr span { 
+            display: none !important; 
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #2563eb;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+
+<body class="text-gray-800 antialiased min-h-screen flex flex-col items-center py-8 px-4">
+
+    <!-- Header Logo -->
+    <header class="w-full max-w-4xl flex flex-col items-center mb-8">
+        <img src="https://ppdb.ppiabaitulmaal.sch.id/wp-content/uploads/2022/10/LOGO-SMP-1337x1536.png" alt="Logo SMP IP Baitul Maal" class="w-24 h-auto drop-shadow-md mb-4">
+        <h1 class="text-2xl md:text-3xl font-extrabold text-center text-gray-900 tracking-tight">Presensi Siswa</h1>
+        <p class="text-gray-500 font-medium mt-1">SMP Islam Plus Baitul Maal</p>
+    </header>
+
+    <main class="w-full max-w-4xl relative">
+        <!-- ================= VIEW 1: AREA SCANNER SISWA ================= -->
+        <div id="viewScanner" class="bg-white p-6 md:p-8 rounded-2xl shadow-xl shadow-blue-900/5 border border-gray-100 max-w-md mx-auto transition-all">
+            
+            <div class="mb-6 text-center">
+                <h2 class="text-xl font-bold text-gray-800 mb-1">Silakan Scan QR Code</h2>
+                <p class="text-sm text-gray-500">Arahkan kamera ke QR Code pada ID Tag Anda</p>
+            </div>
+            
+            <!-- Wadah Scanner -->
+            <div id="reader" class="mb-6"></div>
+            
+            <!-- Divider -->
+            <div class="relative flex py-4 items-center">
+                <div class="flex-grow border-t border-gray-200"></div>
+                <span class="flex-shrink-0 mx-4 text-gray-400 text-xs uppercase font-bold tracking-wider">Atau</span>
+                <div class="flex-grow border-t border-gray-200"></div>
+            </div>
+
+            <!-- Manual Input -->
+            <div class="mt-2">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Input NIS Manual (Jika QR Rusak)</label>
+                <div class="flex gap-2">
+                    <input type="number" id="inputNis" placeholder="Masukkan NIS..." class="flex-1 rounded-xl border-gray-300 border px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-gray-50 text-gray-800">
+                    <button onclick="prosesManual()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-md shadow-blue-600/20 transition-all flex items-center gap-2">
+                        <span>Kirim</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bottom Links -->
+            <div class="mt-8 flex justify-between items-center border-t border-gray-100 pt-5">
+                <button onclick="cekRekapSiswa()" class="text-blue-600 hover:text-blue-800 text-sm font-semibold flex items-center gap-1.5 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    Riwayat Saya
+                </button>
+                <button onclick="loginGuru()" class="text-gray-400 hover:text-gray-700 text-sm font-semibold flex items-center gap-1.5 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                    Area Guru
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 2: DASHBOARD GURU (SAMA SEPERTI SEBELUMNYA) ================= -->
+        <div id="viewDashboard" class="hidden bg-white p-4 md:p-8 rounded-2xl shadow-xl border border-gray-100 w-full animate-fade-in">
+            <!-- (Bagian Dashboard HTML persis sama) -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b pb-4 gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Dashboard Presensi</h2>
+                    <p class="text-sm text-gray-500" id="tglDashboard">Hari ini</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="bukaModalManual()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold shadow-sm text-sm transition">+ Input Kehadiran</button>
+                    <button onclick="logoutGuru()" class="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-lg font-semibold shadow-sm text-sm transition">Tutup Area Guru</button>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100"><p class="text-xs text-blue-600 font-bold uppercase mb-1 tracking-wider">Total Siswa</p><p class="text-2xl font-black text-blue-900" id="statTotal">-</p></div>
+                <div class="bg-green-50 p-4 rounded-xl border border-green-100"><p class="text-xs text-green-600 font-bold uppercase mb-1 tracking-wider">Hadir</p><p class="text-2xl font-black text-green-900" id="statHadir">-</p></div>
+                <div class="bg-orange-50 p-4 rounded-xl border border-orange-100"><p class="text-xs text-orange-600 font-bold uppercase mb-1 tracking-wider">Belum Absen</p><p class="text-2xl font-black text-orange-900" id="statBelum">-</p></div>
+                <div class="bg-red-50 p-4 rounded-xl border border-red-100"><p class="text-xs text-red-600 font-bold uppercase mb-1 tracking-wider">Tidak Hadir</p><p class="text-2xl font-black text-red-900" id="statAbsen">-</p></div>
+            </div>
+            <!-- Filter & Export -->
+            <div class="bg-gray-50 p-5 rounded-xl border border-gray-200 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Filter Kelas</label>
+                        <select id="filterKelas" onchange="terapkanFilter()" class="w-full rounded-lg border-gray-300 p-2 text-sm border outline-none bg-white">
+                            <option value="Semua">Semua Kelas</option>
+                            <option value="7 A1">7 A1</option><option value="7 A2">7 A2</option>
+                            <option value="7 B1">7 B1</option><option value="7 B2">7 B2</option>
+                            <option value="8 A1">8 A1</option><option value="8 A2">8 A2</option>
+                            <option value="8 B1">8 B1</option><option value="8 B2">8 B2</option>
+                            <option value="9 A1">9 A1</option><option value="9 A2">9 A2</option>
+                            <option value="9 B1">9 B1</option><option value="9 B2">9 B2</option>
+                        </select>
+                    </div>
+                    <div><label class="block text-xs font-semibold text-gray-600 mb-1">Tanggal</label><input type="date" id="filterTanggal" onchange="terapkanFilter()" class="w-full rounded-lg border-gray-300 p-2 text-sm border outline-none bg-white"></div>
+                    <div><label class="block text-xs font-semibold text-gray-600 mb-1">Bulan</label><input type="month" id="filterBulan" onchange="terapkanFilter()" class="w-full rounded-lg border-gray-300 p-2 text-sm border outline-none bg-white"></div>
+                    <div><label class="block text-xs font-semibold text-gray-600 mb-1">Cari Nama / NIS</label><input type="text" id="filterNama" onkeyup="terapkanFilter()" placeholder="Ketik..." class="w-full rounded-lg border-gray-300 p-2 text-sm border outline-none bg-white"></div>
+                    <div class="flex gap-2">
+                        <button onclick="exportExcel()" class="flex-1 bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg text-sm font-semibold shadow transition" title="Unduh Excel">Excel</button>
+                        <button onclick="exportPDF()" class="flex-1 bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg text-sm font-semibold shadow transition" title="Unduh PDF">PDF</button>
+                    </div>
+                </div>
+                <div class="mt-3 text-right"><button onclick="resetFilter()" class="text-xs text-blue-600 hover:text-blue-800 font-semibold hover:underline">⟳ Reset Semua Filter</button></div>
+            </div>
+            <!-- Chart & Table -->
+            <div class="mb-8 bg-white p-4 rounded-xl border border-gray-100 shadow-sm"><canvas id="grafikKehadiran" height="80"></canvas></div>
+            <div class="overflow-x-auto bg-white rounded-xl border border-gray-200 shadow-sm">
+                <table class="min-w-full text-sm text-left" id="tabelData">
+                    <thead class="bg-gray-50 text-gray-600 font-semibold text-xs uppercase border-b">
+                        <tr><th class="px-4 py-3">Tanggal</th><th class="px-4 py-3">Waktu</th><th class="px-4 py-3">NIS</th><th class="px-4 py-3">Nama Siswa</th><th class="px-4 py-3">Kelas</th><th class="px-4 py-3">Tipe</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Ket</th><th class="px-4 py-3 text-center">Aksi</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100" id="tbodyData"></tbody>
+                </table>
+                <div id="loaderTabel" class="hidden py-8 text-center"><div class="loader"></div><p class="text-gray-500 mt-2 text-sm font-medium">Memuat Data dari Server...</p></div>
+            </div>
+        </div>
+
+        <!-- ================= MODAL INPUT MANUAL ================= -->
+        <div id="modalManual" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+            <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
+                <h3 class="text-xl font-bold mb-4 text-gray-800 border-b pb-3">Input Kehadiran Manual</h3>
+                <div class="space-y-4">
+                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal</label><input type="date" id="inTanggal" class="w-full rounded-lg border-gray-300 p-2.5 border outline-none"></div>
+                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">NIS Siswa</label><div class="flex gap-2"><input type="number" id="inNis" class="w-full rounded-lg border-gray-300 p-2.5 border outline-none" placeholder="Masukkan NIS"><button onclick="cariSiswaByNis()" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 rounded-lg text-sm font-bold border border-blue-200 transition">Cari</button></div></div>
+                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Nama Siswa</label><input type="text" id="inNama" class="w-full rounded-lg border-gray-300 p-2.5 border bg-gray-50 cursor-not-allowed font-medium" readonly></div>
+                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">Kelas</label><input type="text" id="inKelas" class="w-full rounded-lg border-gray-300 p-2.5 border bg-gray-50 cursor-not-allowed font-medium" readonly></div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Keterangan</label>
+                        <select id="inKet" class="w-full rounded-lg border-gray-300 p-2.5 border outline-none bg-white">
+                            <option value="Hadir">Hadir</option><option value="Sakit">Sakit</option><option value="Izin">Izin</option><option value="Alpha">Alpha</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-100">
+                    <button onclick="tutupModalManual()" class="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition">Batal</button>
+                    <button onclick="simpanManual()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md transition">Simpan Data</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // =========================================================================
+        // PENGATURAN API BACKEND (UBAH LINK INI DENGAN LINK GOOGLE SCRIPT ANDA)
+        // =========================================================================
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxSouGm1sGFxgj6Vk3ve3OR1w0r3zkn8ryD-tT9QJcqVRmJQWbix4qSaAIcRQyKCTvHLw/exec"; 
+
+        // Fungsi fetch helper (Bypass CORS Preflight dengan text/plain)
+        async function callAPI(action, data = {}) {
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: action, data: data })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                throw error;
+            }
+        }
+
+        let html5QrcodeScanner = null;
+        let chartInstance = null;
+        let dataMasterHadir = []; 
+        let dataMasterSiswa = [];
+
+        function onScanSuccess(decodedText, decodedResult) {
+            if (html5QrcodeScanner) html5QrcodeScanner.pause(true);
+            
+            Swal.fire({
+                title: 'Memproses...', text: 'Mencatat kehadiran ' + decodedText,
+                allowOutsideClick: false, didOpen: () => { Swal.showLoading() }
+            });
+
+            callAPI('processScan', { nis: decodedText })
+                .then(response => {
+                    if (response.success) {
+                        let icon = 'success'; let color = '#16a34a';
+                        if (response.status === 'Terlambat') { icon = 'warning'; color = '#eab308'; }
+
+                        Swal.fire({
+                            icon: icon, title: response.tipe + ' Berhasil!',
+                            html: `<div class="text-left mt-3 bg-gray-50 p-4 rounded-lg border">
+                                    <p class="mb-1"><b>Nama:</b> ${response.siswa.nama}</p>
+                                    <p class="mb-1"><b>Kelas:</b> ${response.siswa.kelas}</p>
+                                    <p class="mb-1"><b>Waktu:</b> ${response.waktu}</p>
+                                    <p class="mt-2 pt-2 border-t"><b>Status:</b> <span style="color:${color}; font-weight:900; font-size:1.1em">${response.status}</span></p>
+                                </div>`,
+                            confirmButtonColor: '#2563eb', confirmButtonText: 'Lanjut Scan'
+                        }).then(() => { if (html5QrcodeScanner) html5QrcodeScanner.resume(); });
+                    } else {
+                        Swal.fire({
+                            icon: 'error', title: 'Gagal', text: response.message,
+                            confirmButtonColor: '#d33', confirmButtonText: 'Tutup'
+                        }).then(() => { if (html5QrcodeScanner) html5QrcodeScanner.resume(); });
+                    }
+                })
+                .catch(err => {
+                    Swal.fire('Error', 'Terjadi kesalahan koneksi.', 'error').then(() => {
+                        if (html5QrcodeScanner) html5QrcodeScanner.resume();
+                    });
+                });
+        }
+
+        window.onload = function() {
+            html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
+                fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0, 
+                showTorchButtonIfSupported: true, rememberLastUsedCamera: true
+            }, false);
+            html5QrcodeScanner.render(onScanSuccess);
+
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('tglDashboard').innerText = new Date().toLocaleDateString('id-ID', options);
+        };
+
+        function prosesManual() {
+            let nis = document.getElementById('inputNis').value;
+            if(!nis) return Swal.fire('Peringatan', 'Masukkan NIS terlebih dahulu!', 'warning');
+            onScanSuccess(nis, null);
+            document.getElementById('inputNis').value = '';
+        }
+
+        function cekRekapSiswa() {
+            Swal.fire({
+                title: 'Cari Riwayat', input: 'text', inputLabel: 'Masukkan NIS atau Nama',
+                showCancelButton: true, confirmButtonText: 'Cari', confirmButtonColor: '#2563eb',
+                showLoaderOnConfirm: true,
+                preConfirm: (query) => callAPI('getStudentRecap', { query: query }),
+                allowOutsideClick: () => !Swal.isLoading()
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    let data = result.value;
+                    if(data.length === 0) return Swal.fire('Hasil', 'Tidak ada data ditemukan.', 'info');
+                    
+                    let html = `<div class="max-h-64 overflow-y-auto text-sm text-left mt-2"><table class="w-full border-collapse">
+                        <tr class="bg-gray-100"><th class="p-2 border">Tgl</th><th class="p-2 border">Tipe</th><th class="p-2 border">Waktu</th><th class="p-2 border">Status</th></tr>`;
+                    data.forEach(d => {
+                        let color = d.status === 'Terlambat' ? 'text-red-600' : 'text-green-600';
+                        html += `<tr><td class="p-2 border">${d.tanggal}</td><td class="p-2 border font-semibold">${d.tipe}</td><td class="p-2 border">${d.waktu}</td><td class="p-2 border ${color} font-bold">${d.status}</td></tr>`;
+                    });
+                    html += `</table></div>`;
+                    Swal.fire({ title: 'Riwayat Anda', html: html, width: 600 });
+                }
+            });
+        }
+
+        function loginGuru() {
+            Swal.fire({
+                title: 'Akses Guru', input: 'password', inputLabel: 'Password Admin',
+                showCancelButton: true, confirmButtonText: 'Masuk', confirmButtonColor: '#2563eb',
+                showLoaderOnConfirm: true,
+                preConfirm: (pass) => callAPI('authenticate', { pass: pass })
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    if(result.value) {
+                        document.getElementById('viewScanner').classList.add('hidden');
+                        document.getElementById('viewDashboard').classList.remove('hidden');
+                        if (html5QrcodeScanner) html5QrcodeScanner.clear(); 
+                        loadDashboardData();
+                        loadDataSiswa();
+                    } else {
+                        Swal.fire('Akses Ditolak', 'Password salah!', 'error');
+                    }
+                }
+            });
+        }
+
+        function logoutGuru() { location.reload(); }
+
+        function loadDashboardData() {
+            document.getElementById('loaderTabel').classList.remove('hidden');
+            document.getElementById('tbodyData').innerHTML = '';
+            
+            callAPI('getDashboardData').then(response => {
+                document.getElementById('loaderTabel').classList.add('hidden');
+                document.getElementById('statTotal').innerText = response.stats.total;
+                document.getElementById('statHadir').innerText = response.stats.hadir;
+                document.getElementById('statBelum').innerText = response.stats.belumAbsen;
+                document.getElementById('statAbsen').innerText = response.stats.sakit + response.stats.izin + response.stats.alpha;
+                
+                dataMasterHadir = response.tableData;
+                renderTabel(dataMasterHadir);
+                renderChart(response.tableData);
+            });
+        }
+
+        function loadDataSiswa() { callAPI('getAllStudents').then(res => { dataMasterSiswa = res; }); }
+
+        function renderTabel(data) {
+            let tbody = document.getElementById('tbodyData');
+            tbody.innerHTML = '';
+            if(data.length === 0) { tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-gray-500 font-medium">Tidak ada data sesuai filter</td></tr>`; return; }
+
+            data.forEach(d => {
+                let statusColor = 'text-green-700 bg-green-100 border border-green-200';
+                if(d.status === 'Terlambat') statusColor = 'text-yellow-700 bg-yellow-100 border border-yellow-200';
+                else if(d.status === '-') statusColor = 'text-gray-600 bg-gray-100 border border-gray-200';
+                
+                tbody.innerHTML += `
+                    <tr class="hover:bg-blue-50 transition">
+                        <td class="px-4 py-3 whitespace-nowrap">${d.tanggal}</td>
+                        <td class="px-4 py-3 whitespace-nowrap font-medium text-gray-600">${d.waktu}</td>
+                        <td class="px-4 py-3 font-semibold text-blue-600">${d.nis}</td>
+                        <td class="px-4 py-3 font-medium">${d.nama}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-center">${d.kelas}</td>
+                        <td class="px-4 py-3 whitespace-nowrap font-semibold">${d.tipe}</td>
+                        <td class="px-4 py-3 whitespace-nowrap"><span class="px-2 py-1 rounded text-xs font-bold ${statusColor}">${d.status}</span></td>
+                        <td class="px-4 py-3 whitespace-nowrap">${d.keterangan}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-center">
+                            <button onclick="hapusRecord(${d.id})" class="text-red-500 hover:text-white hover:bg-red-500 border border-red-500 px-3 py-1.5 rounded text-xs font-bold transition">Hapus</button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        function terapkanFilter() {
+            let fKelas = document.getElementById('filterKelas').value; let fTgl = document.getElementById('filterTanggal').value; 
+            let fBulan = document.getElementById('filterBulan').value; let fNama = document.getElementById('filterNama').value.toLowerCase();
+
+            let filtered = dataMasterHadir.filter(d => {
+                let matchKelas = (fKelas === 'Semua') || (d.kelas === fKelas);
+                let parts = d.tanggal.split('/'); let dateYMD = parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : '';
+                let matchTgl = (!fTgl) || (dateYMD === fTgl); let matchBulan = (!fBulan) || (dateYMD.startsWith(fBulan));
+                let matchNama = (!fNama) || (d.nama.toLowerCase().includes(fNama) || String(d.nis).includes(fNama));
+                return matchKelas && matchTgl && matchBulan && matchNama;
+            });
+            renderTabel(filtered); renderChart(filtered);
+        }
+
+        function resetFilter() {
+            document.getElementById('filterKelas').value = 'Semua'; document.getElementById('filterTanggal').value = '';
+            document.getElementById('filterBulan').value = ''; document.getElementById('filterNama').value = '';
+            renderTabel(dataMasterHadir); renderChart(dataMasterHadir);
+        }
+
+        function renderChart(data) {
+            let ctx = document.getElementById('grafikKehadiran').getContext('2d');
+            if(chartInstance) chartInstance.destroy();
+
+            let counts = {};
+            data.forEach(d => {
+                if(d.tipe === 'Masuk' || d.tipe === 'Manual') {
+                    if(!counts[d.tanggal]) counts[d.tanggal] = { hadir:0, sakit:0, izin:0, alpha:0, telat:0 };
+                    if(d.keterangan === 'Hadir' && d.status === 'Tepat Waktu') counts[d.tanggal].hadir++;
+                    else if(d.status === 'Terlambat') counts[d.tanggal].telat++;
+                    else if(d.keterangan === 'Sakit') counts[d.tanggal].sakit++;
+                    else if(d.keterangan === 'Izin') counts[d.tanggal].izin++;
+                    else if(d.keterangan === 'Alpha' || d.keterangan === 'Tanpa Keterangan') counts[d.tanggal].alpha++;
+                }
+            });
+
+            let labels = Object.keys(counts).sort((a,b) => {
+                let pA = a.split('/'); let pB = b.split('/');
+                return new Date(pA[2], pA[1]-1, pA[0]) - new Date(pB[2], pB[1]-1, pB[0]);
+            }).slice(-7);
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Tepat Waktu', data: labels.map(l => counts[l].hadir), backgroundColor: '#22c55e', borderRadius: 4 },
+                        { label: 'Terlambat', data: labels.map(l => counts[l].telat), backgroundColor: '#eab308', borderRadius: 4 },
+                        { label: 'Sakit', data: labels.map(l => counts[l].sakit), backgroundColor: '#3b82f6', borderRadius: 4 },
+                        { label: 'Izin', data: labels.map(l => counts[l].izin), backgroundColor: '#a855f7', borderRadius: 4 },
+                        { label: 'Alpha', data: labels.map(l => counts[l].alpha), backgroundColor: '#ef4444', borderRadius: 4 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: {stepSize: 1} } } }
+            });
+        }
+
+        function exportExcel() {
+            let wb = XLSX.utils.table_to_book(document.getElementById("tabelData"), {sheet:"Laporan Kehadiran"});
+            XLSX.writeFile(wb, "Laporan_Kehadiran_Siswa.xlsx");
+        }
+
+        function exportPDF() {
+            const { jsPDF } = window.jspdf; const doc = new jsPDF('landscape');
+            doc.setFontSize(16); doc.text("Laporan Presensi Kehadiran Siswa", 14, 15);
+            doc.setFontSize(10); doc.setTextColor(100); doc.text("SMP Islam Plus Baitul Maal", 14, 21);
+            doc.autoTable({ html: '#tabelData', startY: 25, theme: 'grid', styles: { fontSize: 8 }, headStyles: { fillColor: [37, 99, 235] } });
+            doc.save('Laporan_Kehadiran_Siswa.pdf');
+        }
+
+        function bukaModalManual() {
+            document.getElementById('modalManual').classList.remove('hidden');
+            document.getElementById('inTanggal').value = new Date().toISOString().split('T')[0];
+            document.getElementById('inNis').value = ''; document.getElementById('inNama').value = ''; document.getElementById('inKelas').value = '';
+        }
+        function tutupModalManual() { document.getElementById('modalManual').classList.add('hidden'); }
+
+        function cariSiswaByNis() {
+            let nis = document.getElementById('inNis').value;
+            let siswa = dataMasterSiswa.find(s => String(s.nis) === String(nis));
+            if(siswa) {
+                document.getElementById('inNama').value = siswa.nama; document.getElementById('inKelas').value = siswa.kelas;
+            } else { Swal.fire('Info', 'NIS tidak ditemukan', 'info'); }
+        }
+
+        function simpanManual() {
+            let data = { tanggal: document.getElementById('inTanggal').value, nis: document.getElementById('inNis').value, nama: document.getElementById('inNama').value, kelas: document.getElementById('inKelas').value, keterangan: document.getElementById('inKet').value };
+            if(!data.tanggal || !data.nis || !data.nama) return Swal.fire('Error', 'Lengkapi data', 'error');
+
+            Swal.fire({title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+            callAPI('inputManual', data).then(res => {
+                if(res.success) { Swal.fire('Berhasil', 'Tersimpan', 'success'); tutupModalManual(); loadDashboardData(); }
+            });
+        }
+
+        function hapusRecord(id) {
+            Swal.fire({
+                title: 'Yakin hapus data ini?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Ya, Hapus!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({title: 'Menghapus...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+                    callAPI('deleteRecord', { id: id }).then(res => {
+                        if(res.success) { Swal.fire('Terhapus!', '', 'success'); loadDashboardData(); }
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>
