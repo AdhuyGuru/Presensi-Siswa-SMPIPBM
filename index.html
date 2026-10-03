@@ -7,25 +7,20 @@
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Tailwind CSS (CDN) -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <!-- Icons (FontAwesome) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- External Libraries -->
-    <script src="https://unpkg.com/html5-qrcode"></script> <!-- QR Scanner -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- Alerts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script> <!-- Excel Export -->
+    <script src="https://unpkg.com/html5-qrcode"></script> 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script> 
 
     <script>
         tailwind.config = {
             theme: {
-                extend: {
-                    fontFamily: { sans: ['Poppins', 'sans-serif'] },
-                    colors: { primary: '#047857', secondary: '#f59e0b' }
-                }
+                extend: { fontFamily: { sans: ['Poppins', 'sans-serif'] }, colors: { primary: '#047857', secondary: '#f59e0b' } }
             }
         }
     </script>
@@ -35,29 +30,19 @@
         .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
         .nav-btn { position: relative; transition: all 0.3s ease; }
         .nav-btn.active { color: #047857; font-weight: 600; }
-        .nav-btn.active::after {
-            content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 3px;
-            background-color: #047857; border-radius: 4px;
-        }
-        
-        /* QR Code Reader Styling */
+        .nav-btn.active::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 3px; background-color: #047857; border-radius: 4px; }
         #reader { width: 100%; max-width: 500px; margin: 0 auto; border-radius: 1rem; overflow: hidden; border: none !important; box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.05); }
         #reader video { object-fit: cover; border-radius: 1rem; width: 100%; }
-        
-        /* Custom Scrollbar for better UX */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-        /* Animation */
         .animate-fade-in { animation: fadeIn 0.4s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="min-h-screen flex flex-col text-gray-800">
 
-    <!-- Header / Navbar -->
     <header class="bg-white shadow-sm sticky top-0 z-50">
         <div class="container mx-auto px-4 py-3">
             <div class="flex items-center gap-4 justify-center md:justify-start">
@@ -68,7 +53,6 @@
                 </div>
             </div>
         </div>
-        <!-- Tabs Navigation -->
         <div class="flex justify-center border-t border-gray-100 bg-gray-50/50 backdrop-blur-sm px-2 overflow-x-auto">
             <button onclick="switchTab('scan')" id="tab-scan" class="nav-btn active px-4 md:px-8 py-3 text-sm md:text-base text-gray-600 hover:text-primary whitespace-nowrap"><i class="fa-solid fa-qrcode mr-2"></i>Scan QR</button>
             <button onclick="switchTab('rekap')" id="tab-rekap" class="nav-btn px-4 md:px-8 py-3 text-sm md:text-base text-gray-600 hover:text-primary whitespace-nowrap"><i class="fa-solid fa-clipboard-list mr-2"></i>Rekap Siswa</button>
@@ -76,15 +60,12 @@
         </div>
     </header>
 
-    <!-- Main Content Container -->
     <main class="flex-grow container mx-auto px-4 py-8 max-w-5xl">
         
-        <!-- ================= SECTION 1: SCANNER ================= -->
+        <!-- SECTION 1: SCANNER -->
         <section id="sec-scan" class="animate-fade-in block">
             <div class="glass-card rounded-2xl shadow-xl p-6 md:p-8 max-w-lg mx-auto text-center border-t-4 border-primary">
                 <h2 class="text-2xl font-bold text-gray-800 mb-6">Pindai Kehadiran</h2>
-                
-                <!-- Toggle Datang / Pulang -->
                 <div class="flex justify-center gap-4 mb-6 bg-gray-100 p-2 rounded-xl">
                     <label class="flex-1 cursor-pointer">
                         <input type="radio" name="tipeAbsen" value="Datang" checked class="peer sr-only">
@@ -100,27 +81,21 @@
                     </label>
                 </div>
                 
-                <!-- Camera Container -->
                 <div class="bg-black/5 p-2 rounded-2xl mb-4">
                     <div id="reader" class="bg-black aspect-square w-full relative">
                         <div class="absolute inset-0 flex flex-col items-center justify-center text-white/50" id="cameraPlaceholder">
-                            <i class="fa-solid fa-camera text-5xl mb-3"></i>
-                            <p class="text-sm">Mempersiapkan Kamera...</p>
+                            <i class="fa-solid fa-camera text-5xl mb-3"></i><p class="text-sm">Mempersiapkan Kamera...</p>
                         </div>
                     </div>
                 </div>
-
                 <div id="scanStatus" class="inline-flex items-center gap-2 text-sm text-gray-500 font-medium px-4 py-2 bg-gray-100 rounded-full">
-                    <span class="relative flex h-3 w-3">
-                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                      <span class="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
-                    </span>
+                    <span class="relative flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-primary"></span></span>
                     Kamera Siap - Arahkan QR Code Siswa
                 </div>
             </div>
         </section>
 
-        <!-- ================= SECTION 2: REKAP SISWA ================= -->
+        <!-- SECTION 2: REKAP SISWA -->
         <section id="sec-rekap" class="hidden animate-fade-in">
             <div class="glass-card rounded-2xl shadow-xl p-6 md:p-8">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -129,17 +104,13 @@
                         <p class="text-sm text-gray-500">Siswa dapat melihat log presensi harian mereka di sini.</p>
                     </div>
                 </div>
-
                 <div class="flex flex-col sm:flex-row gap-3 mb-6">
                     <div class="relative flex-grow">
                         <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                        <input type="text" id="searchInput" placeholder="Ketik NIS atau Nama Lengkap Siswa..." class="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-gray-50 shadow-inner text-gray-700" onkeyup="if(event.keyCode === 13) cariRekap()">
+                        <input type="text" id="searchInput" placeholder="Ketik NIS atau Nama Lengkap..." class="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-gray-50 shadow-inner text-gray-700" onkeyup="if(event.keyCode === 13) cariRekap()">
                     </div>
-                    <button onclick="cariRekap()" class="bg-primary text-white px-8 py-3 rounded-xl hover:bg-green-700 transition shadow-md font-medium whitespace-nowrap">
-                        Cari Data
-                    </button>
+                    <button onclick="cariRekap()" class="bg-primary text-white px-8 py-3 rounded-xl hover:bg-green-700 transition shadow-md font-medium whitespace-nowrap">Cari Data</button>
                 </div>
-                
                 <div class="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse min-w-[600px]">
@@ -166,16 +137,12 @@
             </div>
         </section>
 
-        <!-- ================= SECTION 3: PANEL GURU ================= -->
+        <!-- SECTION 3: PANEL GURU -->
         <section id="sec-admin" class="hidden animate-fade-in">
-            <!-- Login State -->
             <div id="adminLogin" class="glass-card rounded-2xl shadow-xl p-8 max-w-sm mx-auto text-center border-t-4 border-blue-600 block">
-                <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                    <i class="fa-solid fa-lock"></i>
-                </div>
+                <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fa-solid fa-lock"></i></div>
                 <h2 class="text-2xl font-bold text-gray-800 mb-2">Portal Guru</h2>
                 <p class="text-sm text-gray-500 mb-6">Masukkan kata sandi untuk mengakses dashboard.</p>
-                
                 <div class="relative mb-6">
                     <i class="fa-solid fa-key absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
                     <input type="password" id="adminPassword" placeholder="Kata Sandi Guru..." class="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50" onkeyup="if(event.keyCode === 13) loginAdmin()">
@@ -185,56 +152,37 @@
                 </button>
             </div>
             
-            <!-- Dashboard State -->
             <div id="adminDashboard" class="hidden animate-fade-in">
-                <!-- Top Header -->
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
                     <div>
                         <h2 class="text-2xl font-bold text-gray-800">Dashboard Kehadiran</h2>
                         <p class="text-sm text-gray-500">Selamat datang di Panel Manajemen Kehadiran Siswa</p>
                     </div>
-                    <button onclick="logoutAdmin()" class="px-5 py-2.5 bg-red-50 text-red-600 rounded-xl text-sm font-semibold hover:bg-red-100 transition shadow-sm border border-red-100">
-                        <i class="fa-solid fa-power-off mr-1"></i> Keluar
-                    </button>
+                    <button onclick="logoutAdmin()" class="px-5 py-2.5 bg-red-50 text-red-600 rounded-xl text-sm font-semibold hover:bg-red-100 transition shadow-sm border border-red-100"><i class="fa-solid fa-power-off mr-1"></i> Keluar</button>
                 </div>
 
-                <!-- Stats Cards -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                     <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                        <div class="flex justify-between items-start mb-2">
-                            <h3 class="text-gray-500 text-sm font-medium">Siswa Hadir</h3>
-                            <span class="bg-green-100 text-green-600 p-1.5 rounded-lg"><i class="fa-solid fa-user-check"></i></span>
-                        </div>
+                        <div class="flex justify-between items-start mb-2"><h3 class="text-gray-500 text-sm font-medium">Siswa Hadir</h3><span class="bg-green-100 text-green-600 p-1.5 rounded-lg"><i class="fa-solid fa-user-check"></i></span></div>
                         <p id="statHadir" class="text-3xl font-bold text-gray-800">0</p>
                     </div>
                     <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                        <div class="flex justify-between items-start mb-2">
-                            <h3 class="text-gray-500 text-sm font-medium">Terlambat</h3>
-                            <span class="bg-yellow-100 text-yellow-600 p-1.5 rounded-lg"><i class="fa-solid fa-clock"></i></span>
-                        </div>
+                        <div class="flex justify-between items-start mb-2"><h3 class="text-gray-500 text-sm font-medium">Terlambat</h3><span class="bg-yellow-100 text-yellow-600 p-1.5 rounded-lg"><i class="fa-solid fa-clock"></i></span></div>
                         <p id="statTelat" class="text-3xl font-bold text-gray-800">0</p>
                     </div>
                     <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                        <div class="flex justify-between items-start mb-2">
-                            <h3 class="text-gray-500 text-sm font-medium">Sakit / Izin</h3>
-                            <span class="bg-blue-100 text-blue-600 p-1.5 rounded-lg"><i class="fa-solid fa-file-medical"></i></span>
-                        </div>
+                        <div class="flex justify-between items-start mb-2"><h3 class="text-gray-500 text-sm font-medium">Sakit / Izin</h3><span class="bg-blue-100 text-blue-600 p-1.5 rounded-lg"><i class="fa-solid fa-file-medical"></i></span></div>
                         <p id="statIzin" class="text-3xl font-bold text-gray-800">0</p>
                     </div>
                     <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                        <div class="flex justify-between items-start mb-2">
-                            <h3 class="text-gray-500 text-sm font-medium">Alpa (Belum Absen)</h3>
-                            <span class="bg-red-100 text-red-600 p-1.5 rounded-lg"><i class="fa-solid fa-user-xmark"></i></span>
-                        </div>
+                        <div class="flex justify-between items-start mb-2"><h3 class="text-gray-500 text-sm font-medium">Alpa (Tanpa Ket)</h3><span class="bg-red-100 text-red-600 p-1.5 rounded-lg"><i class="fa-solid fa-user-xmark"></i></span></div>
                         <p id="statAlpa" class="text-3xl font-bold text-gray-800">0</p>
                     </div>
                 </div>
 
-                <!-- Management Table Area -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
                     <div class="p-6 border-b border-gray-100 bg-gray-50 flex flex-col md:flex-row justify-between items-center gap-4">
                         <div class="flex flex-wrap gap-3 w-full md:w-auto">
-                            <!-- Filter Kelas -->
                             <div class="relative">
                                 <i class="fa-solid fa-filter absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
                                 <select id="filterKelas" onchange="renderAdminTable()" class="pl-8 pr-8 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none bg-white font-medium">
@@ -247,17 +195,12 @@
                                     <option value="9 B1">9 B1</option><option value="9 B2">9 B2</option>
                                 </select>
                             </div>
-                            <!-- Filter Bulan -->
                             <input type="month" id="filterBulan" onchange="renderAdminTable()" class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white font-medium">
                         </div>
-                        
                         <div class="flex gap-2 w-full md:w-auto">
-                            <button onclick="exportExcel()" class="flex-1 md:flex-none bg-primary text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-green-700 transition shadow-md">
-                                <i class="fa-solid fa-file-excel mr-1"></i> Unduh Laporan Excel
-                            </button>
+                            <button onclick="exportExcel()" class="flex-1 md:flex-none bg-primary text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-green-700 transition shadow-md"><i class="fa-solid fa-file-excel mr-1"></i> Unduh Excel</button>
                         </div>
                     </div>
-                    
                     <div class="overflow-x-auto max-h-[500px]">
                         <table class="w-full text-left border-collapse min-w-[800px]" id="adminTable">
                             <thead class="sticky top-0 bg-white shadow-sm z-10">
@@ -270,14 +213,7 @@
                                     <th class="p-4 font-semibold w-24">Keterangan</th>
                                 </tr>
                             </thead>
-                            <tbody id="adminTableBody" class="text-sm divide-y divide-gray-100">
-                                <tr>
-                                    <td colspan="6" class="p-10 text-center text-gray-400">
-                                        <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-3 text-primary block"></i>
-                                        <p>Menarik Data dari Database...</p>
-                                    </td>
-                                </tr>
-                            </tbody>
+                            <tbody id="adminTableBody" class="text-sm divide-y divide-gray-100"></tbody>
                         </table>
                     </div>
                 </div>
@@ -288,105 +224,83 @@
     <script>
         // =========================================================================
         // SETTING API
-        // Ganti string ini dengan URL Web App Google Apps Script Anda setelah di-Deploy!
-        const API_URL = 'https://script.google.com/macros/s/AKfycbyHN_N0deIaPvaZACATuGMPDjGIGHMALKcVriqixHPJoKWkG7X1zOlzRcuoBMbsqpxx6g/exec'; 
+        // PASTE URL WEB APP APPS SCRIPT DI BAWAH SINI:
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzOwwiwDONyVYtdBiJGNfQYrOgQ-AL0N-dWsSVBR-b9JV_RRfdRhv_trOKQvglisBk_Ow/exec'; 
         // =========================================================================
 
         let html5QrcodeScanner = null;
         let isProcessingScan = false;
         let adminData = [];
 
-        // Setup Saat Halaman Pertama Load
         window.onload = () => {
             switchTab('scan');
-            // Set default filter bulan ke bulan saat ini
             const now = new Date();
-            const yyyy = now.getFullYear();
             const mm = String(now.getMonth() + 1).padStart(2, '0');
-            document.getElementById('filterBulan').value = `${yyyy}-${mm}`;
+            document.getElementById('filterBulan').value = `${now.getFullYear()}-${mm}`;
         };
 
         function switchTab(tabId) {
             document.querySelectorAll('section').forEach(sec => sec.classList.add('hidden'));
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            
             document.getElementById(`sec-${tabId}`).classList.remove('hidden');
             document.getElementById(`tab-${tabId}`).classList.add('active');
 
-            if (tabId === 'scan') {
-                setTimeout(initScanner, 300); // delay render untuk menghidari bug DOM canvas kamera
-            } else {
-                stopScanner();
-            }
+            if (tabId === 'scan') { setTimeout(initScanner, 300); } 
+            else { stopScanner(); }
         }
 
         function initScanner() {
             if(!html5QrcodeScanner) {
                 html5QrcodeScanner = new Html5Qrcode("reader");
                 const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-                
-                html5QrcodeScanner.start(
-                    { facingMode: "environment" }, 
-                    config, 
-                    onScanSuccess, 
-                    onScanFailure
-                ).then(() => {
-                    document.getElementById('cameraPlaceholder').style.display = 'none';
-                }).catch((err) => {
-                    console.log("Akses Kamera ditolak atau tidak ditemukan.");
-                    document.getElementById('cameraPlaceholder').innerHTML = '<i class="fa-solid fa-video-slash text-4xl mb-2 text-red-400"></i><p class="text-sm">Izin Kamera Ditolak / Tidak Ditemukan</p>';
+                html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
+                .then(() => document.getElementById('cameraPlaceholder').style.display = 'none')
+                .catch(err => {
+                    document.getElementById('cameraPlaceholder').innerHTML = '<i class="fa-solid fa-video-slash text-4xl mb-2 text-red-400"></i><p class="text-sm">Izin Kamera Ditolak</p>';
                 });
             }
         }
-
         function stopScanner() {
             if(html5QrcodeScanner && html5QrcodeScanner.isScanning) {
                 html5QrcodeScanner.stop().then(() => {
-                    html5QrcodeScanner.clear();
-                    html5QrcodeScanner = null;
+                    html5QrcodeScanner.clear(); html5QrcodeScanner = null;
                     document.getElementById('cameraPlaceholder').style.display = 'flex';
                 }).catch(err => console.log(err));
             }
         }
 
+        // ============================================================================
+        // PENTING: KODE INI YANG MEMPERBAIKI ERROR "KONEKSI TERPUTUS" (CORS PREFLIGHT)
+        // ============================================================================
+        function callAPI(payload) {
+            return fetch(API_URL, {
+                redirect: "follow", // Memaksa browser mengikuti alur Redirect internal Apps Script
+                method: "POST",
+                headers: {
+                    "Content-Type": "text/plain;charset=utf-8", // Memaksa agar lolos bypass preflight CORS
+                },
+                body: JSON.stringify(payload)
+            }).then(response => response.json());
+        }
+
         function onScanSuccess(decodedText, decodedResult) {
             if(isProcessingScan) return; 
-            
-            // --- MOCKUP (MODE PREVIEW JIKA URL API BELUM DISET) ---
             if(API_URL === 'URL_WEB_APP_ANDA_DISINI') {
-                isProcessingScan = true;
-                const tipe = document.querySelector('input[name="tipeAbsen"]:checked').value;
-                Swal.fire({
-                    icon: 'success', title: 'Mode Preview Berhasil',
-                    html: `QR terbaca: <b>${decodedText}</b><br>Berhasil diabsen untuk <b>${tipe}</b>.<br><br><span class="text-xs text-red-500">Pasang API_URL asli untuk simpan ke Spreadsheet.</span>`,
-                    timer: 3000, showConfirmButton: false
-                }).then(() => { isProcessingScan = false; });
+                Swal.fire({icon: 'warning', title: 'Belum Setup API', text: 'Pastikan Anda telah merubah API_URL di dalam index.html', timer: 3000, showConfirmButton: false});
                 return;
             }
-            // -----------------------------------------------------
 
             isProcessingScan = true;
-            Swal.fire({
-                title: 'Mencatat Absensi...',
-                text: 'Harap tunggu...',
-                allowOutsideClick: false,
-                didOpen: () => { Swal.showLoading(); }
-            });
+            Swal.fire({ title: 'Mencatat Absensi...', text: 'Harap tunggu...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
             const tipeAbsen = document.querySelector('input[name="tipeAbsen"]:checked').value;
 
-            // Panggil API Backend
-            fetch(API_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'scan', nis: decodedText, tipe: tipeAbsen })
-            })
-            .then(res => res.json())
+            callAPI({ action: 'scan', nis: decodedText, tipe: tipeAbsen })
             .then(res => {
                 if(res.status === 'success') {
                     const isLate = res.data.status.toLowerCase().includes('terlambat') || res.data.status.toLowerCase().includes('lebih awal');
                     Swal.fire({
-                        icon: isLate ? 'warning' : 'success',
-                        title: 'Presensi Berhasil!',
+                        icon: isLate ? 'warning' : 'success', title: 'Presensi Berhasil!',
                         html: `
                             <div class="text-left mt-3 p-4 bg-gray-50 rounded-xl text-sm border ${isLate ? 'border-yellow-300' : 'border-green-300'}">
                                 <p class="mb-1.5"><span class="text-gray-500 w-16 inline-block">Nama</span>: <b class="text-gray-800 text-base">${res.data.nama}</b></p>
@@ -394,62 +308,42 @@
                                 <p class="mb-1.5"><span class="text-gray-500 w-16 inline-block">Jam</span>: <b>${res.data.jam}</b> WIB</p>
                                 <p><span class="text-gray-500 w-16 inline-block">Status</span>: <span class="font-bold px-2 py-0.5 rounded ${isLate ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}">${res.data.status}</span></p>
                             </div>
-                        `,
-                        timer: 4500,
-                        showConfirmButton: false
+                        `, timer: 4500, showConfirmButton: false
                     });
                 } else {
                     Swal.fire({ icon: 'error', title: 'Gagal', text: res.message, timer: 4000, showConfirmButton: false });
                 }
-                setTimeout(() => { isProcessingScan = false; }, 3000); // jeda cegah scan beruntun cepat
+                setTimeout(() => { isProcessingScan = false; }, 3000); 
             })
             .catch(err => {
-                Swal.fire({ icon: 'error', title: 'Koneksi Terputus', text: 'Gagal terhubung ke Server Apps Script.' });
+                console.error("Error Log:", err);
+                Swal.fire({ icon: 'error', title: 'Koneksi Terputus', html: 'Gagal terhubung ke Server Apps Script.<br><br><span class="text-xs">Pastikan Deploy Web App: Execute as ME & Access ANYONE</span>' });
                 isProcessingScan = false;
             });
         }
-        function onScanFailure(error) { /* Background error diabaikan secara diam-diam */ }
+        function onScanFailure(error) { }
 
         function cariRekap() {
             const query = document.getElementById('searchInput').value;
-            if(!query) {
-                Swal.fire({icon: 'warning', title: 'Perhatian', text: 'Ketik NIS atau Nama terlebih dahulu', timer: 2000, showConfirmButton: false});
-                return;
-            }
+            if(!query) return Swal.fire({icon: 'warning', title: 'Perhatian', text: 'Ketik NIS atau Nama', timer: 2000, showConfirmButton: false});
 
-            // --- MOCKUP PREVIEW KANVAS ---
-            if(API_URL === 'URL_WEB_APP_ANDA_DISINI') {
-                const tbody = document.getElementById('rekapTableBody');
-                tbody.innerHTML = `
-                    <tr class="hover:bg-gray-50">
-                        <td class="p-4">2026-10-03</td>
-                        <td class="p-4 font-medium">${query} (Mode Simulasi)</td>
-                        <td class="p-4 text-center font-bold">06:50</td>
-                        <td class="p-4"><span class="px-2 py-1 bg-green-100 text-green-700 rounded-md text-xs font-bold">Datang</span></td>
-                        <td class="p-4 text-primary font-semibold">Tepat Waktu</td>
-                    </tr>
-                `;
-                return;
-            }
-            // -----------------------------------
+            if(API_URL === 'URL_WEB_APP_ANDA_DISINI') return Swal.fire({icon: 'warning', title: 'Belum Setup API', timer: 3000, showConfirmButton: false});
 
             const tbody = document.getElementById('rekapTableBody');
             tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-500"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Sedang mencari...</td></tr>`;
             
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getRecap', nisOrName: query }) })
-            .then(res => res.json())
+            callAPI({ action: 'getRecap', nisOrName: query })
             .then(res => {
                 tbody.innerHTML = '';
                 if(res.data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-gray-500">Tidak ada riwayat kehadiran yang ditemukan.</td></tr>';
-                    return;
+                    tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-gray-500">Tidak ada riwayat kehadiran.</td></tr>'; return;
                 }
                 res.data.forEach(d => {
                     const tgl = d.tanggal.substring(0,10);
                     let stColor = (d.status.toLowerCase().includes('terlambat') || d.status.toLowerCase().includes('awal')) ? 'text-yellow-600' : 'text-primary';
                     let typeBadge = d.tipe === 'Datang' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700';
                     tbody.innerHTML += `
-                        <tr class="hover:bg-gray-50 transition border-b border-gray-100">
+                        <tr class="hover:bg-gray-50 border-b border-gray-100">
                             <td class="p-4 text-gray-600">${tgl}</td>
                             <td class="p-4 font-medium text-gray-800">${d.nama}</td>
                             <td class="p-4 text-center font-bold text-gray-600">${d.jam}</td>
@@ -458,35 +352,20 @@
                         </tr>
                     `;
                 });
-            }).catch(()=> {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-red-500">Koneksi API Gagal.</td></tr>`;
-            });
+            }).catch(()=> tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-red-500">Koneksi API Gagal. Pastikan URL_API sudah benar.</td></tr>`);
         }
 
         let adminToken = '';
-        
         function loginAdmin() {
             const pass = document.getElementById('adminPassword').value;
             if(!pass) return;
-
-            // --- MOCKUP PREVIEW KANVAS (Tanpa Password Verifikasi di Frontend) ---
-            if(API_URL === 'URL_WEB_APP_ANDA_DISINI') {
-                Swal.fire({icon:'info', title:'Mode Preview', text:'Semua password akan diterima di preview kanvas ini.', timer: 2500, showConfirmButton:false});
-                document.getElementById('adminLogin').classList.add('hidden');
-                document.getElementById('adminDashboard').classList.remove('hidden');
-                document.getElementById('adminTableBody').innerHTML = `<tr><td colspan="6" class="p-6 text-center text-gray-500">Tampilan Preview Kanvas.<br>Data asli akan muncul setelah Anda memasang URL_API.</td></tr>`;
-                return;
-            }
-            // -----------------------------------
+            if(API_URL === 'URL_WEB_APP_ANDA_DISINI') return Swal.fire({icon: 'warning', title: 'Belum Setup API', timer: 3000, showConfirmButton: false});
 
             Swal.showLoading();
-            // Validasi Password ASLI dilakukan sepenuhnya oleh Backend Apps Script (Aman dari inspect element)
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'loginTeacher', password: pass }) })
-            .then(res => res.json())
+            callAPI({ action: 'loginTeacher', password: pass })
             .then(res => {
                 if(res.status === 'success') {
-                    Swal.close();
-                    adminToken = res.token; // Menyimpan Token Sesi
+                    Swal.close(); adminToken = res.token; 
                     document.getElementById('adminLogin').classList.add('hidden');
                     document.getElementById('adminDashboard').classList.remove('hidden');
                     document.getElementById('adminPassword').value = ''; 
@@ -494,74 +373,52 @@
                 } else {
                     Swal.fire({icon: 'error', title: 'Akses Ditolak', text: res.message, timer: 3000, showConfirmButton: false});
                 }
-            }).catch(()=> Swal.fire('Error', 'Gagal terhubung ke server', 'error'));
+            }).catch(err => { console.error(err); Swal.fire('Error', 'Gagal terhubung ke server', 'error'); });
         }
 
         function logoutAdmin() {
-            adminToken = '';
-            document.getElementById('adminDashboard').classList.add('hidden');
-            document.getElementById('adminLogin').classList.remove('hidden');
+            adminToken = ''; document.getElementById('adminDashboard').classList.add('hidden'); document.getElementById('adminLogin').classList.remove('hidden');
         }
 
         function loadDashboardData() {
             const tbody = document.getElementById('adminTableBody');
             tbody.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-gray-500"><i class="fa-solid fa-circle-notch fa-spin text-2xl mr-2 text-primary"></i> Mengunduh Data Server...</td></tr>`;
             
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getDashboardData', token: adminToken }) })
-            .then(res => res.json())
+            callAPI({ action: 'getDashboardData', token: adminToken })
             .then(res => {
-                if(res.status === 'success') {
-                    adminData = res.data;
-                    renderAdminTable();
-                } else {
-                    Swal.fire('Sesi Berakhir', res.message, 'warning');
-                    logoutAdmin();
-                }
-            });
+                if(res.status === 'success') { adminData = res.data; renderAdminTable(); } 
+                else { Swal.fire('Sesi Berakhir', res.message, 'warning'); logoutAdmin(); }
+            }).catch(()=> { tbody.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-red-500">Gagal Mengunduh Data.</td></tr>`; });
         }
 
         function renderAdminTable() {
             const kelasFilter = document.getElementById('filterKelas').value;
             const bulanFilter = document.getElementById('filterBulan').value; 
-            
-            // Variabel Hitungan Statistik (Hitung Berdasarkan Hari Ini & Filter Tabel)
             const tglHariIni = new Date().toISOString().split('T')[0]; 
             let cHadir = 0, cTelat = 0, cIzin = 0, cAlpa = 0;
 
             let filtered = adminData.filter(d => {
-                // Kalkulasi Stats Harian Tanpa Mempedulikan Filter Tabel (Global hari ini)
                 if(d.tanggal.startsWith(tglHariIni)) {
                     if(d.ket === 'Hadir' && d.tipe === 'Datang') {
-                        cHadir++;
-                        if(d.status.toLowerCase().includes('terlambat')) cTelat++;
+                        cHadir++; if(d.status.toLowerCase().includes('terlambat')) cTelat++;
                     }
                     if(d.ket === 'Sakit' || d.ket === 'Izin') cIzin++;
                     if(d.ket === 'Alpa' || d.ket === 'Alpha') cAlpa++;
                 }
-
-                // Filtering Data Untuk Tabel
                 let matchKelas = (kelasFilter === 'ALL') || (d.kelas === kelasFilter);
                 let matchBulan = true;
-                if(bulanFilter) {
-                    matchBulan = d.tanggal.startsWith(bulanFilter);
-                }
+                if(bulanFilter) matchBulan = d.tanggal.startsWith(bulanFilter);
                 return matchKelas && matchBulan;
             });
 
-            // Update DOM Statistik Dashboard
             document.getElementById('statHadir').innerText = cHadir;
             document.getElementById('statTelat').innerText = cTelat;
             document.getElementById('statIzin').innerText = cIzin;
             document.getElementById('statAlpa').innerText = cAlpa;
 
-            // Render DOM Tabel
             const tbody = document.getElementById('adminTableBody');
             tbody.innerHTML = '';
-            
-            if(filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-500">Tidak ada data untuk kelas/bulan yang dipilih.</td></tr>`;
-                return;
-            }
+            if(filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-500">Tidak ada data.</td></tr>`; return; }
             
             filtered.forEach(d => {
                 let badgeTipe = d.tipe === 'Datang' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-blue-50 text-blue-700 border-blue-200';
@@ -571,10 +428,7 @@
                 tbody.innerHTML += `
                     <tr class="hover:bg-gray-50 border-b border-gray-100 transition">
                         <td class="p-4 text-xs text-gray-500">${d.tanggal.substring(0,10)}<br><b class="text-gray-800 text-sm">${d.jam}</b></td>
-                        <td class="p-4">
-                            <p class="font-semibold text-gray-800 leading-tight">${d.nama}</p>
-                            <p class="text-xs text-gray-500 mt-1">NIS: ${d.nis}</p>
-                        </td>
+                        <td class="p-4"><p class="font-semibold text-gray-800 leading-tight">${d.nama}</p><p class="text-xs text-gray-500 mt-1">NIS: ${d.nis}</p></td>
                         <td class="p-4 font-medium text-gray-600">${d.kelas}</td>
                         <td class="p-4"><span class="px-2.5 py-1 border rounded-md text-xs font-bold ${badgeTipe}">${d.tipe}</span></td>
                         <td class="p-4 font-semibold ${stColor}">${d.status}</td>
@@ -585,16 +439,9 @@
         }
 
         function exportExcel() {
-            if(adminData.length === 0) return Swal.fire('Data Kosong', 'Tidak ada riwayat kehadiran yang bisa diunduh', 'info');
-            const table = document.getElementById("adminTable");
-            
-            // Library SheetJS -> Konversi HTML Table langsung jadi File Excel Asli
-            const wb = XLSX.utils.table_to_book(table, {sheet: "Laporan Absensi"});
-            
-            const bln = document.getElementById('filterBulan').value || "SemuaBulan";
-            const kls = document.getElementById('filterKelas').value || "SemuaKelas";
-            
-            XLSX.writeFile(wb, `Laporan_Absensi_SMPIPBM_${kls}_${bln}.xlsx`);
+            if(adminData.length === 0) return Swal.fire('Data Kosong', 'Tidak ada data untuk diunduh', 'info');
+            const wb = XLSX.utils.table_to_book(document.getElementById("adminTable"), {sheet: "Laporan Absensi"});
+            XLSX.writeFile(wb, `Laporan_Absensi_SMPIPBM_${document.getElementById('filterKelas').value}_${document.getElementById('filterBulan').value}.xlsx`);
         }
     </script>
 </body>
