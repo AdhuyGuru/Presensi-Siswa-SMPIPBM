@@ -1,403 +1,616 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Absensi SMP Islam Plus Baitul Maal</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Absensi SMP Islam Plus Baitul Maal</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; color: #334155; }
+    .nav-btn { position: relative; padding: 1rem 1.5rem; font-weight: 600; color: #64748b; transition: all 0.3s; cursor:pointer;}
+    .nav-btn:hover { color: #047857; }
+    .nav-btn.active { color: #047857; }
+    .nav-btn.active::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: #047857; border-radius: 3px 3px 0 0; }
     
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    #reader video { border-radius: 1rem; width: 100%; object-fit: cover; }
+    .glass-card { background: white; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); overflow: hidden; }
     
-    <!-- External Libraries -->
-    <script src="https://unpkg.com/html5-qrcode"></script> 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script> 
-
-    <script>
-        tailwind.config = { theme: { extend: { fontFamily: { sans: ['Poppins', 'sans-serif'] }, colors: { primary: '#047857', secondary: '#f59e0b' } } } }
-    </script>
-    
-    <style>
-        body { background-color: #f3f4f6; }
-        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
-        .nav-btn.active { color: #047857; font-weight: 600; border-bottom: 3px solid #047857;}
-        #reader { width: 100%; max-width: 500px; margin: 0 auto; border-radius: 1rem; overflow: hidden; border: none !important; }
-        #reader video { object-fit: cover; border-radius: 1rem; width: 100%; }
-        .animate-fade-in { animation: fadeIn 0.4s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
+    /* Animations */
+    .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
+    .fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(10px); }
+    .modal-overlay { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+  </style>
 </head>
-<body class="min-h-screen flex flex-col text-gray-800">
+<body>
 
-    <header class="bg-white shadow-sm sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-3">
-            <div class="flex items-center gap-4 justify-center md:justify-start">
-                <img src="https://ppdb.ppiabaitulmaal.sch.id/wp-content/uploads/2022/10/LOGO-SMP-1337x1536.png" alt="Logo SMPIPBM" class="h-12 w-auto drop-shadow-sm">
-                <div>
-                    <h1 class="text-xl md:text-2xl font-bold text-primary leading-tight">Presensi Siswa</h1>
-                    <p class="text-xs md:text-sm text-gray-500 font-medium">SMP Islam Plus Baitul Maal</p>
-                </div>
-            </div>
+<div id="app" class="min-h-screen flex flex-col">
+  
+  <header class="bg-white sticky top-0 z-40 border-b border-gray-200">
+    <div class="container mx-auto px-4 py-3">
+      <div class="flex items-center gap-4 justify-center md:justify-start">
+        <img src="https://ppdb.ppiabaitulmaal.sch.id/wp-content/uploads/2022/10/LOGO-SMP-1337x1536.png" class="h-12 drop-shadow-sm" alt="Logo">
+        <div>
+          <h1 class="text-xl md:text-2xl font-extrabold text-[#047857] leading-tight">Presensi Kehadiran</h1>
+          <p class="text-xs md:text-sm text-gray-500 font-semibold">SMP Islam Plus Baitul Maal</p>
         </div>
-        <div class="flex justify-center border-t border-gray-100 bg-gray-50/50 backdrop-blur-sm px-2 overflow-x-auto">
-            <button onclick="switchTab('scan')" id="tab-scan" class="nav-btn active px-4 md:px-8 py-3 text-sm md:text-base text-gray-600 hover:text-primary whitespace-nowrap"><i class="fa-solid fa-qrcode mr-2"></i>Scan QR</button>
-            <button onclick="switchTab('rekap')" id="tab-rekap" class="nav-btn px-4 md:px-8 py-3 text-sm md:text-base text-gray-600 hover:text-primary whitespace-nowrap"><i class="fa-solid fa-clipboard-list mr-2"></i>Rekap Siswa</button>
-            <button onclick="switchTab('admin')" id="tab-admin" class="nav-btn px-4 md:px-8 py-3 text-sm md:text-base text-gray-600 hover:text-primary whitespace-nowrap"><i class="fa-solid fa-user-shield mr-2"></i>Portal Guru</button>
+      </div>
+    </div>
+    <div class="flex justify-center border-t border-gray-100 bg-gray-50/50 overflow-x-auto text-sm md:text-base">
+      <button @click="changeTab('scan')" :class="['nav-btn whitespace-nowrap', { active: currentTab === 'scan' }]"><i class="fa-solid fa-qrcode mr-2"></i>Scan QR</button>
+      <button @click="changeTab('rekap')" :class="['nav-btn whitespace-nowrap', { active: currentTab === 'rekap' }]"><i class="fa-solid fa-clipboard-list mr-2"></i>Rekap Siswa</button>
+      <button @click="changeTab('admin')" :class="['nav-btn whitespace-nowrap', { active: currentTab === 'admin' }]"><i class="fa-solid fa-user-shield mr-2"></i>Portal Guru</button>
+    </div>
+  </header>
+
+  <main class="flex-grow container mx-auto px-4 py-8 max-w-6xl">
+    
+    <transition name="fade" mode="out-in">
+      <div v-if="currentTab === 'scan'" class="max-w-lg mx-auto">
+        <div class="glass-card p-6 md:p-8 text-center border-t-4 border-[#047857]">
+          <h2 class="text-2xl font-bold mb-6">Pindai Kehadiran</h2>
+          
+          <div class="flex justify-center gap-3 mb-6 bg-gray-100 p-1.5 rounded-xl">
+            <button @click="tipeAbsen = 'Datang'" :class="['flex-1 py-2.5 rounded-lg font-bold transition shadow-sm', tipeAbsen === 'Datang' ? 'bg-[#047857] text-white' : 'text-gray-500 hover:bg-gray-200']">
+              <i class="fa-solid fa-arrow-right-to-bracket mr-1"></i> Datang
+            </button>
+            <button @click="tipeAbsen = 'Pulang'" :class="['flex-1 py-2.5 rounded-lg font-bold transition shadow-sm', tipeAbsen === 'Pulang' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-200']">
+              <i class="fa-solid fa-house-chimney mr-1"></i> Pulang
+            </button>
+          </div>
+          
+          <div class="bg-gray-900 rounded-2xl p-2 mb-4 relative shadow-inner">
+            <div id="reader" class="w-full aspect-square md:aspect-video rounded-xl bg-black"></div>
+          </div>
+          <p class="text-sm text-gray-500 font-semibold bg-gray-100 inline-block px-4 py-2 rounded-full"><i class="fa-solid fa-camera mr-2"></i> Arahkan QR Code ke Kamera</p>
         </div>
-    </header>
+      </div>
 
-    <main class="flex-grow container mx-auto px-4 py-8 max-w-5xl">
+      <div v-else-if="currentTab === 'rekap'" class="max-w-4xl mx-auto">
+        <div class="glass-card p-6">
+          <h2 class="text-2xl font-bold mb-6">Cari Rekap Kehadiran</h2>
+          
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+            <select v-model="filterRekap.kelas" class="p-3 border rounded-xl bg-gray-50 font-medium focus:ring-2 focus:ring-green-500 outline-none">
+              <option value="ALL">Semua Kelas</option>
+              <option v-for="k in listKelas" :key="k" :value="k">{{ k }}</option>
+            </select>
+            <input v-model="filterRekap.search" type="text" placeholder="Cari Nama / NIS..." class="md:col-span-2 p-3 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-green-500 outline-none">
+            <button @click="loadPublicRecap" class="bg-[#047857] text-white p-3 rounded-xl hover:bg-green-700 font-bold shadow-md transition">
+              <i class="fa-solid fa-rotate mr-2"></i>Refresh
+            </button>
+          </div>
+
+          <div class="overflow-x-auto rounded-xl border border-gray-200">
+            <table class="w-full text-left whitespace-nowrap">
+              <thead class="bg-gray-100 text-gray-600 text-sm uppercase">
+                <tr>
+                  <th class="p-4 font-bold">Tanggal</th>
+                  <th class="p-4 font-bold">Nama Siswa</th>
+                  <th class="p-4 font-bold">Jam</th>
+                  <th class="p-4 font-bold">Tipe</th>
+                  <th class="p-4 font-bold">Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 text-sm">
+                <tr v-if="isLoading" class="text-center"><td colspan="5" class="p-8 text-gray-500"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><br>Memuat Data...</td></tr>
+                <tr v-else-if="filteredPublicRecap.length === 0" class="text-center"><td colspan="5" class="p-8 text-gray-500 font-medium">Data tidak ditemukan</td></tr>
+                <tr v-for="r in filteredPublicRecap" :key="r.id" class="hover:bg-green-50/50">
+                  <td class="p-4 text-gray-500 font-medium">{{ r.tanggal }}</td>
+                  <td class="p-4"><p class="font-bold text-gray-800">{{ r.nama }}</p><p class="text-xs text-gray-400">{{ r.kelas }}</p></td>
+                  <td class="p-4 font-bold text-gray-700">{{ r.jam }}</td>
+                  <td class="p-4"><span :class="r.tipe==='Datang'?'bg-green-100 text-green-700':'bg-blue-100 text-blue-700'" class="px-2 py-1 rounded font-bold text-xs">{{ r.tipe }}</span></td>
+                  <td class="p-4 font-bold" :class="r.status.includes('Terlambat')||r.status.includes('Awal') ? 'text-red-500' : 'text-[#047857]'">{{ r.status }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div v-else-if="currentTab === 'admin'" class="w-full">
         
-        <section id="sec-scan" class="animate-fade-in block">
-            <div class="glass-card rounded-2xl shadow-xl p-6 md:p-8 max-w-lg mx-auto text-center border-t-4 border-primary">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6">Pindai Kehadiran</h2>
-                <div class="flex justify-center gap-4 mb-6 bg-gray-100 p-2 rounded-xl">
-                    <label class="flex-1 cursor-pointer">
-                        <input type="radio" name="tipeAbsen" value="Datang" checked class="peer sr-only">
-                        <div class="py-2 px-4 rounded-lg peer-checked:bg-primary peer-checked:text-white font-medium transition-all shadow-sm">
-                            <i class="fa-solid fa-arrow-right-to-bracket mr-1"></i> Datang
-                        </div>
-                    </label>
-                    <label class="flex-1 cursor-pointer">
-                        <input type="radio" name="tipeAbsen" value="Pulang" class="peer sr-only">
-                        <div class="py-2 px-4 rounded-lg peer-checked:bg-blue-600 peer-checked:text-white font-medium transition-all shadow-sm">
-                            <i class="fa-solid fa-house-chimney mr-1"></i> Pulang
-                        </div>
-                    </label>
-                </div>
-                
-                <div class="bg-black/5 p-2 rounded-2xl mb-4 relative">
-                    <div id="reader" class="bg-black aspect-square w-full"></div>
-                </div>
-                <div id="scanStatus" class="inline-flex items-center gap-2 text-sm text-gray-500 font-medium px-4 py-2 bg-gray-100 rounded-full">
-                    <i class="fa-solid fa-camera"></i> Arahkan QR Code Siswa
-                </div>
-            </div>
-        </section>
+        <!-- Login Form -->
+        <div v-if="!adminToken" class="max-w-sm mx-auto glass-card p-8 border-t-4 border-blue-600 text-center mt-10">
+          <i class="fa-solid fa-user-shield text-4xl text-blue-600 mb-4"></i>
+          <h2 class="text-2xl font-bold mb-6">Portal Guru</h2>
+          <input v-model="adminPwd" @keyup.enter="loginAdmin" type="password" placeholder="Masukkan Kata Sandi..." class="w-full p-3 border rounded-xl mb-4 bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none text-center font-bold">
+          <button @click="loginAdmin" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 shadow-md">Masuk</button>
+        </div>
 
-        <section id="sec-rekap" class="hidden animate-fade-in">
-            <div class="glass-card rounded-2xl shadow-xl p-6 md:p-8">
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Cari Rekap Kehadiran</h2>
-                <div class="flex flex-col sm:flex-row gap-3 mb-6">
-                    <input type="text" id="searchInput" placeholder="Ketik NIS atau Nama Lengkap..." class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary bg-gray-50" onkeyup="if(event.keyCode === 13) cariRekap()">
-                    <button onclick="cariRekap()" class="bg-primary text-white px-8 py-3 rounded-xl hover:bg-green-700 transition shadow-md font-medium whitespace-nowrap">Cari Data</button>
-                </div>
-                <div class="overflow-x-auto border border-gray-100 rounded-xl">
-                    <table class="w-full text-left border-collapse min-w-[600px]">
-                        <thead>
-                            <tr class="bg-gray-50 text-gray-600 text-sm">
-                                <th class="p-4 font-semibold w-32">Tanggal</th>
-                                <th class="p-4 font-semibold">Nama Siswa</th>
-                                <th class="p-4 font-semibold w-24 text-center">Jam</th>
-                                <th class="p-4 font-semibold w-28">Tipe</th>
-                                <th class="p-4 font-semibold w-32">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="rekapTableBody" class="text-sm divide-y divide-gray-100">
-                            <tr><td colspan="5" class="p-10 text-center text-gray-400">Silakan lakukan pencarian</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+        <!-- Dashboard Guru -->
+        <div v-else class="space-y-6">
+          <div class="flex flex-wrap justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+            <div class="flex gap-2 overflow-x-auto">
+              <button @click="adminMenu = 'resume'" :class="['px-5 py-2.5 rounded-lg font-bold text-sm transition whitespace-nowrap', adminMenu==='resume'?'bg-blue-600 text-white shadow-md':'bg-gray-100 text-gray-600 hover:bg-gray-200']"><i class="fa-solid fa-chart-pie mr-2"></i>Resume Harian</button>
+              <button @click="adminMenu = 'kelola'" :class="['px-5 py-2.5 rounded-lg font-bold text-sm transition whitespace-nowrap', adminMenu==='kelola'?'bg-[#047857] text-white shadow-md':'bg-gray-100 text-gray-600 hover:bg-gray-200']"><i class="fa-solid fa-table-list mr-2"></i>Kelola Data</button>
+              <button @click="adminMenu = 'config'" :class="['px-5 py-2.5 rounded-lg font-bold text-sm transition whitespace-nowrap', adminMenu==='config'?'bg-purple-600 text-white shadow-md':'bg-gray-100 text-gray-600 hover:bg-gray-200']"><i class="fa-solid fa-gear mr-2"></i>Pengaturan</button>
             </div>
-        </section>
+            <button @click="logoutAdmin" class="px-5 py-2.5 border border-red-200 text-red-600 rounded-lg font-bold text-sm hover:bg-red-50 transition"><i class="fa-solid fa-power-off mr-2"></i>Keluar</button>
+          </div>
 
-        <section id="sec-admin" class="hidden animate-fade-in">
-            <div id="adminLogin" class="glass-card rounded-2xl shadow-xl p-8 max-w-sm mx-auto text-center border-t-4 border-blue-600 block">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6">Portal Guru</h2>
-                <input type="password" id="adminPassword" placeholder="Kata Sandi Guru..." class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 bg-gray-50 mb-6" onkeyup="if(event.keyCode === 13) loginAdmin()">
-                <button onclick="loginAdmin()" class="w-full bg-blue-600 text-white px-4 py-3 rounded-xl hover:bg-blue-700 transition font-semibold">Masuk Dashboard</button>
-            </div>
-            
-            <div id="adminDashboard" class="hidden animate-fade-in">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">Dashboard Kehadiran</h2>
-                    <button onclick="logoutAdmin()" class="px-5 py-2 bg-red-50 text-red-600 rounded-xl text-sm font-semibold hover:bg-red-100 transition border border-red-100">Keluar</button>
-                </div>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border"><p class="text-gray-500 text-sm font-medium">Siswa Hadir</p><p id="statHadir" class="text-3xl font-bold text-green-600">0</p></div>
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border"><p class="text-gray-500 text-sm font-medium">Terlambat</p><p id="statTelat" class="text-3xl font-bold text-yellow-600">0</p></div>
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border"><p class="text-gray-500 text-sm font-medium">Sakit / Izin</p><p id="statIzin" class="text-3xl font-bold text-blue-600">0</p></div>
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border"><p class="text-gray-500 text-sm font-medium">Alpa (Tanpa Ket)</p><p id="statAlpa" class="text-3xl font-bold text-red-600">0</p></div>
-                </div>
+          <div v-show="adminMenu === 'resume'" class="space-y-6">
+            <div class="glass-card p-6">
+              <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+                <h2 class="text-xl font-bold">Resume Kehadiran</h2>
+                <input v-model="filterAdmin.tanggal" @change="calculateStats" type="date" class="border p-2.5 rounded-lg bg-gray-50 font-bold outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
 
-                <div class="bg-white rounded-2xl shadow-sm border overflow-hidden">
-                    <div class="p-6 border-b bg-gray-50 flex flex-wrap gap-4 justify-between">
-                        <div class="flex gap-2">
-                            <select id="filterKelas" onchange="renderAdminTable()" class="px-3 py-2 border rounded-lg text-sm bg-white font-medium">
-                                <option value="ALL">Semua Kelas</option>
-                                <option value="7 A1">7 A1</option><option value="7 A2">7 A2</option>
-                                <option value="7 B1">7 B1</option><option value="7 B2">7 B2</option>
-                                <option value="8 A1">8 A1</option><option value="8 A2">8 A2</option>
-                                <option value="8 B1">8 B1</option><option value="8 B2">8 B2</option>
-                                <option value="9 A1">9 A1</option><option value="9 A2">9 A2</option>
-                                <option value="9 B1">9 B1</option><option value="9 B2">9 B2</option>
-                            </select>
-                            <input type="month" id="filterBulan" onchange="renderAdminTable()" class="px-3 py-2 border rounded-lg text-sm bg-white">
-                        </div>
-                        <button onclick="exportExcel()" class="bg-primary text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-green-700 transition">Unduh Excel</button>
+              <!-- Stat Cards -->
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-green-50 p-4 rounded-2xl border border-green-100"><p class="text-sm font-semibold text-green-700 mb-1">Sudah Hadir</p><p class="text-3xl font-extrabold text-[#047857]">{{ stats.hadir }}</p></div>
+                <div class="bg-yellow-50 p-4 rounded-2xl border border-yellow-100"><p class="text-sm font-semibold text-yellow-700 mb-1">Terlambat</p><p class="text-3xl font-extrabold text-yellow-600">{{ stats.telat }}</p></div>
+                <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><p class="text-sm font-semibold text-blue-700 mb-1">Sakit / Izin</p><p class="text-3xl font-extrabold text-blue-600">{{ stats.izin }}</p></div>
+                <div class="bg-red-50 p-4 rounded-2xl border border-red-100"><p class="text-sm font-semibold text-red-700 mb-1">Alfa / Belum Absen</p><p class="text-3xl font-extrabold text-red-600">{{ stats.alfa }}</p></div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Grafik -->
+                <div class="border rounded-2xl p-4">
+                  <h3 class="font-bold text-gray-700 mb-4 text-center">Persentase Kehadiran</h3>
+                  <div class="relative h-64 w-full"><canvas id="chartKehadiran"></canvas></div>
+                </div>
+                <!-- Detail Per Kelas -->
+                <div class="border rounded-2xl p-4 flex flex-col">
+                  <h3 class="font-bold text-gray-700 mb-4">Belum Absen Hari Ini (Per Kelas)</h3>
+                  <div class="overflow-y-auto max-h-64 space-y-2 flex-grow pr-2">
+                    <div v-for="(k, idx) in listKelas" :key="idx" class="flex justify-between items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer border" @click="showDetailBelumAbsen(k)">
+                      <span class="font-bold text-gray-700">{{ k }}</span>
+                      <span class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-bold">{{ countBelumAbsen(k) }} Siswa</span>
                     </div>
-                    <div class="overflow-x-auto max-h-[500px]">
-                        <table class="w-full text-left border-collapse min-w-[800px]" id="adminTable">
-                            <thead class="sticky top-0 bg-white shadow-sm z-10">
-                                <tr class="text-gray-500 text-xs uppercase tracking-wider border-b">
-                                    <th class="p-4 font-semibold">Tgl / Jam</th>
-                                    <th class="p-4 font-semibold">Nama Siswa</th>
-                                    <th class="p-4 font-semibold w-24">Kelas</th>
-                                    <th class="p-4 font-semibold w-28">Presensi</th>
-                                    <th class="p-4 font-semibold w-32">Status</th>
-                                    <th class="p-4 font-semibold w-24">Ket</th>
-                                </tr>
-                            </thead>
-                            <tbody id="adminTableBody" class="text-sm divide-y divide-gray-100"></tbody>
-                        </table>
-                    </div>
+                  </div>
                 </div>
+              </div>
             </div>
-        </section>
-    </main>
+          </div>
 
-    <script>
-        // =========================================================================
-        // MASUKKAN URL DEPLOY WEB APP YANG BARU DI SINI:
-        const API_URL = 'https://script.google.com/macros/s/AKfycbyEk_En1B81UZSJQnz_mzzUCuC28rVupzQZjOq2eghcEh0sRi0HWBaeXUN9n8dYRI8/exec'; 
-        // =========================================================================
+          <div v-show="adminMenu === 'kelola'" class="glass-card p-6">
+            <div class="flex flex-col md:flex-row justify-between gap-4 mb-6">
+              <div class="flex flex-wrap gap-2">
+                <select v-model="filterAdmin.kelas" class="border p-2.5 rounded-lg bg-gray-50 font-bold outline-none w-32">
+                  <option value="ALL">Semua Kelas</option>
+                  <option v-for="k in listKelas" :key="k" :value="k">{{ k }}</option>
+                </select>
+                <input v-model="filterAdmin.bulan" type="month" class="border p-2.5 rounded-lg bg-gray-50 font-bold outline-none w-40">
+                <input v-model="filterAdmin.search" type="text" placeholder="Cari Nama..." class="border p-2.5 rounded-lg bg-gray-50 font-medium outline-none">
+              </div>
+              <div class="flex gap-2">
+                <button @click="openManualModal" class="bg-[#047857] text-white px-4 py-2.5 rounded-lg font-bold shadow-md hover:bg-green-700"><i class="fa-solid fa-plus mr-2"></i>Input Manual</button>
+                <button @click="exportExcel" class="bg-blue-600 text-white px-4 py-2.5 rounded-lg font-bold shadow-md hover:bg-blue-700"><i class="fa-solid fa-file-excel mr-2"></i>Excel</button>
+              </div>
+            </div>
 
-        let html5QrcodeScanner = null;
-        let isProcessingScan = false;
-        let adminData = [];
+            <div class="overflow-x-auto rounded-xl border border-gray-200">
+              <table id="adminTable" class="w-full text-left whitespace-nowrap">
+                <thead class="bg-gray-100 text-gray-600 text-sm uppercase">
+                  <tr>
+                    <th class="p-4 font-bold">Tanggal/Jam</th>
+                    <th class="p-4 font-bold">Siswa</th>
+                    <th class="p-4 font-bold">Kelas</th>
+                    <th class="p-4 font-bold">Tipe/Status</th>
+                    <th class="p-4 font-bold">Ket</th>
+                    <th class="p-4 font-bold text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 text-sm">
+                  <tr v-if="isLoading" class="text-center"><td colspan="6" class="p-8"><i class="fa-solid fa-spinner fa-spin text-2xl"></i></td></tr>
+                  <tr v-else-if="filteredAdminRecap.length === 0" class="text-center"><td colspan="6" class="p-8 text-gray-500">Tidak ada data.</td></tr>
+                  <tr v-for="r in filteredAdminRecap" :key="r.id" class="hover:bg-gray-50">
+                    <td class="p-4"><p class="font-bold text-gray-800">{{ r.tanggal }}</p><p class="text-xs font-bold text-gray-500">{{ r.jam }}</p></td>
+                    <td class="p-4"><p class="font-bold text-gray-800">{{ r.nama }}</p><p class="text-xs text-gray-400">{{ r.nis }}</p></td>
+                    <td class="p-4 font-bold text-gray-600">{{ r.kelas }}</td>
+                    <td class="p-4">
+                      <p><span class="font-bold text-xs" :class="r.tipe==='Datang'?'text-green-600':'text-blue-600'">{{ r.tipe }}</span></p>
+                      <p class="font-bold text-xs mt-1" :class="r.status.includes('Terlambat')?'text-red-500':''">{{ r.status }}</p>
+                    </td>
+                    <td class="p-4 font-bold">{{ r.ket }}</td>
+                    <td class="p-4 text-center">
+                      <button @click="openEditModal(r)" class="w-8 h-8 rounded bg-yellow-100 text-yellow-600 hover:bg-yellow-200 mr-2"><i class="fa-solid fa-pen"></i></button>
+                      <button @click="hapusData(r.id)" class="w-8 h-8 rounded bg-red-100 text-red-600 hover:bg-red-200"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-        window.onload = () => {
-            switchTab('scan');
-            const now = new Date();
-            const mm = String(now.getMonth() + 1).padStart(2, '0');
-            document.getElementById('filterBulan').value = `${now.getFullYear()}-${mm}`;
-        };
+          <div v-show="adminMenu === 'config'" class="glass-card p-6 max-w-lg mx-auto">
+            <h2 class="text-xl font-bold mb-6 border-b pb-4">Pengaturan Jam</h2>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-bold text-gray-600 mb-1">Batas Jam Masuk (Terlambat jika lewat)</label>
+                <input type="time" v-model="config.masuk" class="w-full border p-3 rounded-lg font-bold">
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-gray-600 mb-1">Jam Pulang Normal (Senin, Selasa, Kamis)</label>
+                <input type="time" v-model="config.pulang1" class="w-full border p-3 rounded-lg font-bold">
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-gray-600 mb-1">Jam Pulang Cepat (Rabu, Jumat)</label>
+                <input type="time" v-model="config.pulang2" class="w-full border p-3 rounded-lg font-bold">
+              </div>
+              <button @click="simpanConfig" class="w-full bg-purple-600 text-white font-bold py-3 rounded-lg mt-4 hover:bg-purple-700 shadow-md">Simpan Pengaturan</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
+  </main>
 
-        function switchTab(tabId) {
-            document.querySelectorAll('section').forEach(sec => sec.classList.add('hidden'));
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`sec-${tabId}`).classList.remove('hidden');
-            document.getElementById(`tab-${tabId}`).classList.add('active');
+  <div v-if="modal.show" class="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      
+      <div class="p-5 border-b flex justify-between items-center bg-gray-50">
+        <h3 class="font-bold text-xl text-gray-800">{{ modal.mode === 'edit' ? 'Edit Presensi' : 'Input Manual / Rombongan' }}</h3>
+        <button @click="modal.show = false" class="text-gray-400 hover:text-red-500"><i class="fa-solid fa-times text-2xl"></i></button>
+      </div>
+      
+      <div class="p-5 overflow-y-auto flex-grow">
+        <!-- MODAL EDIT -->
+        <div v-if="modal.mode === 'edit'" class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="text-xs font-bold text-gray-500">Tanggal</label><input type="date" v-model="modal.data.tanggal" class="w-full border p-2.5 rounded-lg font-bold"></div>
+            <div><label class="text-xs font-bold text-gray-500">Jam</label><input type="time" v-model="modal.data.jam" class="w-full border p-2.5 rounded-lg font-bold"></div>
+            <div><label class="text-xs font-bold text-gray-500">Tipe</label>
+              <select v-model="modal.data.tipe" class="w-full border p-2.5 rounded-lg font-bold"><option value="Datang">Datang</option><option value="Pulang">Pulang</option></select>
+            </div>
+            <div><label class="text-xs font-bold text-gray-500">Status</label>
+              <select v-model="modal.data.status" class="w-full border p-2.5 rounded-lg font-bold"><option value="Tepat Waktu">Tepat Waktu</option><option value="Terlambat">Terlambat</option><option value="Pulang Lebih Awal">Pulang Lebih Awal</option></select>
+            </div>
+            <div class="col-span-2"><label class="text-xs font-bold text-gray-500">Keterangan</label>
+              <select v-model="modal.data.ket" class="w-full border p-2.5 rounded-lg font-bold"><option value="Hadir">Hadir</option><option value="Sakit">Sakit</option><option value="Izin">Izin</option><option value="Alfa">Alfa</option></select>
+            </div>
+          </div>
+        </div>
 
-            if (tabId === 'scan') { setTimeout(initScanner, 300); } 
-            else { stopScanner(); }
+        <!-- MODAL MANUAL / ROMBONGAN -->
+        <div v-if="modal.mode === 'manual'" class="space-y-4">
+          <div class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border">
+             <div><label class="text-xs font-bold text-gray-500">Pilih Kelas</label>
+               <select v-model="modal.manualClass" class="w-full border p-2.5 rounded-lg font-bold"><option value="">Pilih...</option><option v-for="k in listKelas" :value="k">{{k}}</option></select>
+             </div>
+             <div><label class="text-xs font-bold text-gray-500">Tanggal Absen</label><input type="date" v-model="modal.manualDate" class="w-full border p-2.5 rounded-lg font-bold"></div>
+          </div>
+
+          <div v-if="modal.manualClass" class="border rounded-xl overflow-hidden">
+            <div class="bg-blue-50 p-3 border-b flex justify-between items-center">
+              <span class="font-bold text-sm text-blue-800">Set Massal (Semua Siswa di Bawah):</span>
+              <div class="flex gap-2">
+                <select v-model="modal.massAction" class="border p-1.5 text-sm rounded bg-white font-bold"><option value="Hadir">Hadir</option><option value="Sakit">Sakit</option><option value="Izin">Izin</option><option value="Alfa">Alfa</option></select>
+                <button @click="applyMassAction" class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm font-bold hover:bg-blue-700">Terapkan</button>
+              </div>
+            </div>
+            <div class="max-h-64 overflow-y-auto p-2 space-y-2 bg-gray-50">
+               <div v-for="s in filteredStudentsForManual" :key="s.nis" class="flex justify-between items-center bg-white p-2.5 border rounded-lg shadow-sm">
+                 <div><p class="font-bold text-sm">{{s.nama}}</p><p class="text-xs text-gray-400">{{s.nis}}</p></div>
+                 <div class="flex gap-2 items-center">
+                   <select v-model="s.inputKet" class="border p-1.5 rounded text-sm font-bold bg-gray-50"><option value="Hadir">Hadir</option><option value="Sakit">Sakit</option><option value="Izin">Izin</option><option value="Alfa">Alfa</option></select>
+                   <select v-if="s.inputKet==='Hadir'" v-model="s.inputTipe" class="border p-1.5 rounded text-sm font-bold bg-green-50 text-green-700"><option value="Datang">Datang</option><option value="Pulang">Pulang</option></select>
+                 </div>
+               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="p-5 border-t bg-gray-50 flex justify-end gap-3">
+        <button @click="modal.show = false" class="px-5 py-2.5 rounded-lg font-bold text-gray-600 hover:bg-gray-200">Batal</button>
+        <button @click="simpanModal" class="bg-[#047857] text-white px-5 py-2.5 rounded-lg font-bold hover:bg-green-700 shadow-md">Simpan Data</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ====================================================================================
+  // 1. GANTI URL INI DENGAN URL DEPLOYMENT APPS SCRIPT YANG BARU!
+  const API_URL = 'https://script.google.com/macros/s/AKfycbz1OD1cilAqJLKYfPMW7P-FDrMbcQmR9lzw84PQX994g8FWfhONkhJH8GQVc2zQHOJcrg/exec';
+  // ====================================================================================
+
+  const { createApp, ref, reactive, computed, onMounted, nextTick } = Vue;
+
+  createApp({
+    setup() {
+      // State Navigasi & Umum
+      const currentTab = ref('scan');
+      const isLoading = ref(false);
+      const listKelas = ['7 A1','7 A2','7 B1','7 B2','8 A1','8 A2','8 B1','8 B2','9 A1','9 A2','9 B1','9 B2'];
+      
+      // State Scanner
+      const tipeAbsen = ref('Datang');
+      let html5QrcodeScanner = null;
+      let isScanning = false;
+
+      // State Data Publik
+      const publicData = ref([]);
+      const filterRekap = reactive({ kelas: 'ALL', search: '' });
+      
+      // State Admin
+      const adminToken = ref('');
+      const adminPwd = ref('');
+      const adminMenu = ref('resume');
+      const dataSiswa = ref([]);
+      const dataAbsen = ref([]);
+      const config = reactive({ masuk: '', pulang1: '', pulang2: '' });
+      
+      const filterAdmin = reactive({ 
+        kelas: 'ALL', 
+        bulan: new Date().toISOString().substring(0, 7), // YYYY-MM
+        tanggal: new Date().toISOString().substring(0, 10), // YYYY-MM-DD
+        search: '' 
+      });
+
+      const stats = reactive({ hadir: 0, telat: 0, izin: 0, alfa: 0 });
+      let chartInstance = null;
+
+      // State Modal (CRUD)
+      const modal = reactive({
+        show: false, mode: '', data: {}, manualClass: '', manualDate: new Date().toISOString().substring(0, 10), massAction: 'Hadir'
+      });
+
+      // Menggunakan Form URL Encoded untuk Bypass CORS
+      const callAPI = async (payload) => {
+        try {
+          const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'data=' + encodeURIComponent(JSON.stringify(payload))
+          });
+          return await res.json();
+        } catch (e) {
+          throw new Error("Koneksi API Gagal. Pastikan URL benar dan terhubung internet.");
         }
+      };
 
-        function initScanner() {
-            if(!html5QrcodeScanner) {
-                html5QrcodeScanner = new Html5Qrcode("reader");
-                const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-                html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
-                .catch(err => console.error("Kamera gagal diakses:", err));
-            }
+      const initScanner = () => {
+        if (!html5QrcodeScanner) {
+          html5QrcodeScanner = new Html5Qrcode("reader");
+          html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, onScanSuccess, ()=>{})
+          .catch(e => console.log("Camera err", e));
         }
+      };
+      const stopScanner = () => {
+        if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
+          html5QrcodeScanner.stop().then(() => { html5QrcodeScanner.clear(); html5QrcodeScanner = null; }).catch(e=>{});
+        }
+      };
+
+      const onScanSuccess = async (decodedText) => {
+        if (isScanning) return;
+        isScanning = true; // Kunci scanner
+        if (html5QrcodeScanner && html5QrcodeScanner.getState() === 2) html5QrcodeScanner.pause(true); // Bekukan kamera
         
-        function stopScanner() {
-            if(html5QrcodeScanner && html5QrcodeScanner.isScanning) {
-                html5QrcodeScanner.stop().then(() => {
-                    html5QrcodeScanner.clear(); html5QrcodeScanner = null;
-                }).catch(err => console.log(err));
-            }
-        }
-
-        // ============================================================================
-        // PERBAIKAN FETCH: MENGGUNAKAN text/plain UNTUK MENJADI SIMPLE REQUEST
-        // Ini memastikan Google Server merespons tanpa masalah CORS
-        // ============================================================================
-        function callAPI(payload) {
-            return fetch(API_URL, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "text/plain;charset=utf-8", 
-                },
-                body: JSON.stringify(payload),
-                redirect: 'follow'
-            })
-            .then(response => {
-                if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-                return response.text();
-            })
-            .then(text => {
-                try {
-                    return JSON.parse(text); 
-                } catch (e) {
-                    console.error("Respon Server Error (Bukan JSON):", text);
-                    throw new Error("Sistem belum di-Deploy ulang atau URL API belum diganti dengan yang terbaru.");
-                }
+        Swal.fire({ title: 'Mencatat...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        
+        try {
+          const res = await callAPI({ action: 'scan', nis: decodedText, tipe: tipeAbsen.value });
+          if (res.status === 'success') {
+            Swal.fire({
+              icon: res.data.status.includes('Terlambat') ? 'warning' : 'success',
+              title: res.data.nama, html: `Tipe: <b>${res.data.tipe}</b><br>Jam: <b>${res.data.jam}</b><br>Status: <b class="${res.data.status.includes('Terlambat')?'text-red-500':'text-green-600'}">${res.data.status}</b>`,
+              timer: 3000, showConfirmButton: false
             });
-        }
+          } else {
+            Swal.fire('Ditolak', res.message, 'error');
+          }
+        } catch (e) { Swal.fire('Error', e.message, 'error'); }
+        
+        // Jeda 2.5 detik sebelum bisa scan lagi
+        setTimeout(() => {
+          isScanning = false;
+          if (html5QrcodeScanner && html5QrcodeScanner.getState() === 3) html5QrcodeScanner.resume();
+        }, 2500);
+      };
 
-        function onScanSuccess(decodedText, decodedResult) {
-            if(isProcessingScan) return; 
-            isProcessingScan = true; 
+      const changeTab = (tab) => {
+        currentTab.value = tab;
+        if (tab === 'scan') setTimeout(initScanner, 300);
+        else stopScanner();
 
-            if(API_URL === 'URL_WEB_APP_ANDA_DISINI') {
-                Swal.fire({icon: 'warning', title: 'URL API Kosong', text: 'Edit file HTML dan masukkan URL.'});
-                isProcessingScan = false;
-                return;
+        if (tab === 'rekap' && publicData.value.length === 0) loadPublicRecap();
+        if (tab === 'admin' && adminToken.value) loadAdminData();
+      };
+
+      const loadPublicRecap = async () => {
+        isLoading.value = true;
+        try {
+          const res = await callAPI({ action: 'getRecap' });
+          if(res.status === 'success') publicData.value = res.data;
+        } catch(e) { Swal.fire('Error', e.message, 'error'); }
+        isLoading.value = false;
+      };
+
+      const filteredPublicRecap = computed(() => {
+        let keyword = filterRekap.search.toLowerCase();
+        return publicData.value.filter(r => {
+          let mKelas = filterRekap.kelas === 'ALL' || r.kelas === filterRekap.kelas;
+          let mSearch = !keyword || r.nama.toLowerCase().includes(keyword) || String(r.nis).includes(keyword);
+          return mKelas && mSearch;
+        });
+      });
+
+      const loginAdmin = async () => {
+        if(!adminPwd.value) return;
+        Swal.showLoading();
+        try {
+          const res = await callAPI({ action: 'loginTeacher', password: adminPwd.value });
+          if(res.status === 'success') {
+            adminToken.value = res.token;
+            adminPwd.value = '';
+            Swal.close();
+            loadAdminData();
+          } else Swal.fire('Gagal', res.message, 'error');
+        } catch(e) { Swal.fire('Error', e.message, 'error'); }
+      };
+      
+      const logoutAdmin = () => { adminToken.value = ''; adminMenu.value = 'resume'; publicData.value = []; dataAbsen.value = []; };
+
+      const loadAdminData = async () => {
+        isLoading.value = true;
+        try {
+          const res = await callAPI({ action: 'getAdminData', token: adminToken.value });
+          if(res.status === 'success') {
+            dataAbsen.value = res.absensi; dataSiswa.value = res.siswa;
+            config.masuk = res.config.masuk; config.pulang1 = res.config.pulang1; config.pulang2 = res.config.pulang2;
+            calculateStats();
+          } else if(res.status === 'error') logoutAdmin();
+        } catch(e) { Swal.fire('Error', e.message, 'error'); }
+        isLoading.value = false;
+      };
+
+      const filteredAdminRecap = computed(() => {
+        let keyword = filterAdmin.search.toLowerCase();
+        return dataAbsen.value.filter(r => {
+          let mKelas = filterAdmin.kelas === 'ALL' || r.kelas === filterAdmin.kelas;
+          let mBulan = !filterAdmin.bulan || r.tanggal.startsWith(filterAdmin.bulan);
+          let mSearch = !keyword || r.nama.toLowerCase().includes(keyword);
+          return mKelas && mBulan && mSearch;
+        });
+      });
+
+      // Filter list siswa utk form input rombongan
+      const filteredStudentsForManual = computed(() => {
+        if(!modal.manualClass) return [];
+        let list = dataSiswa.value.filter(s => s.kelas === modal.manualClass);
+        // Inject reactive input properties
+        list.forEach(s => { if(!s.inputKet) { s.inputKet = 'Hadir'; s.inputTipe = 'Datang'; } });
+        return list;
+      });
+
+      const countBelumAbsen = (kelasTarget) => {
+        let siswaDiKelas = dataSiswa.value.filter(s => s.kelas === kelasTarget).map(s => s.nis);
+        let absenHariIni = dataAbsen.value.filter(a => a.tanggal === filterAdmin.tanggal && a.kelas === kelasTarget).map(a => String(a.nis));
+        let blm = siswaDiKelas.filter(nis => !absenHariIni.includes(String(nis)));
+        return blm.length;
+      };
+
+      const showDetailBelumAbsen = (kelasTarget) => {
+        let siswaDiKelas = dataSiswa.value.filter(s => s.kelas === kelasTarget);
+        let absenHariIni = dataAbsen.value.filter(a => a.tanggal === filterAdmin.tanggal && a.kelas === kelasTarget).map(a => String(a.nis));
+        let blm = siswaDiKelas.filter(s => !absenHariIni.includes(String(s.nis)));
+        if(blm.length===0) return Swal.fire('Info', 'Semua siswa kelas ini sudah tercatat.', 'success');
+        let htmlList = blm.map(s => `<li>${s.nama}</li>`).join('');
+        Swal.fire({ title: `Belum Absen (${kelasTarget})`, html: `<ul class="text-left max-h-64 overflow-y-auto pl-5 list-decimal font-medium">${htmlList}</ul>` });
+      };
+
+      const calculateStats = () => {
+        stats.hadir = 0; stats.telat = 0; stats.izin = 0; stats.alfa = 0;
+        let countedNis = new Set();
+
+        dataAbsen.value.forEach(d => {
+          if(d.tanggal === filterAdmin.tanggal) {
+            countedNis.add(String(d.nis));
+            if(d.ket === 'Hadir' && d.tipe === 'Datang') {
+              stats.hadir++;
+              if(d.status.includes('Terlambat')) stats.telat++;
             }
+            if(d.ket === 'Sakit' || d.ket === 'Izin') stats.izin++;
+            if(d.ket === 'Alfa') stats.alfa++;
+          }
+        });
+        
+        let totalSiswa = dataSiswa.value.length;
+        stats.alfa += (totalSiswa - countedNis.size); // Siswa yg sama sekali blm diabsen dianggap Alfa/Belum
+        renderChart();
+      };
 
-            // Membekukan kamera (mencegah loop multiple data masuk!)
-            if (html5QrcodeScanner && html5QrcodeScanner.getState() === 2) {
-                html5QrcodeScanner.pause(true); 
-            }
+      const renderChart = () => {
+        nextTick(() => {
+          const ctx = document.getElementById('chartKehadiran');
+          if(!ctx) return;
+          if(chartInstance) chartInstance.destroy();
+          chartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels: ['Hadir', 'Izin/Sakit', 'Alfa / Blm Absen'],
+              datasets: [{ data: [stats.hadir, stats.izin, stats.alfa], backgroundColor: ['#047857', '#3b82f6', '#ef4444'], borderWidth: 0 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+          });
+        });
+      };
 
-            Swal.fire({ title: 'Mencatat Absensi...', text: 'Tunggu sebentar...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-
-            const tipeAbsen = document.querySelector('input[name="tipeAbsen"]:checked').value;
-
-            callAPI({ action: 'scan', nis: decodedText, tipe: tipeAbsen })
-            .then(res => {
-                if(res.status === 'success') {
-                    const isLate = res.data.status.toLowerCase().includes('terlambat') || res.data.status.toLowerCase().includes('lebih awal');
-                    Swal.fire({
-                        icon: isLate ? 'warning' : 'success', 
-                        title: 'Presensi Berhasil!',
-                        html: `<b>${res.data.nama}</b><br>Tipe: ${res.data.tipe}<br>Jam: ${res.data.jam}<br>Status: <b>${res.data.status}</b>`, 
-                        timer: 4000
-                    });
-                } else {
-                    Swal.fire({ icon: 'error', title: 'Ditolak / Gagal', text: res.message, timer: 4000 });
-                }
-            })
-            .catch(err => {
-                Swal.fire({ 
-                    icon: 'error', 
-                    title: 'Kesalahan Sistem', 
-                    text: err.message, 
-                    footer: 'Pastikan Anda telah membuat Deployment Baru pada Apps Script.'
-                });
-            })
-            .finally(() => {
-                setTimeout(() => {
-                    isProcessingScan = false;
-                    if (html5QrcodeScanner && html5QrcodeScanner.getState() === 3) { 
-                        html5QrcodeScanner.resume();
-                    }
-                }, 2000);
-            });
-        }
-        function onScanFailure(error) {}
-
-        function cariRekap() {
-            const query = document.getElementById('searchInput').value.trim();
-            if(!query) return Swal.fire({icon: 'warning', title: 'Perhatian', text: 'Ketik NIS atau Nama', timer: 2000, showConfirmButton: false});
-
-            const tbody = document.getElementById('rekapTableBody');
-            tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Mencari Data...</td></tr>`;
-            
-            callAPI({ action: 'getRecap', nisOrName: query })
-            .then(res => {
-                tbody.innerHTML = '';
-                if(res.status === 'error') {
-                    tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-red-500">${res.message}</td></tr>`; return;
-                }
-                if(res.data.length === 0) { 
-                    tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-gray-500">Data tidak ditemukan.</td></tr>'; return; 
-                }
-                res.data.forEach(d => {
-                    let stColor = (d.status.toLowerCase().includes('terlambat') || d.status.toLowerCase().includes('awal')) ? 'text-yellow-600' : 'text-primary';
-                    let typeBadge = d.tipe === 'Datang' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700';
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-gray-50 border-b">
-                            <td class="p-4 text-gray-600">${d.tanggal}</td>
-                            <td class="p-4 font-medium text-gray-800">${d.nama}</td>
-                            <td class="p-4 text-center font-bold text-gray-600">${d.jam}</td>
-                            <td class="p-4"><span class="px-2 py-1 ${typeBadge} rounded-md text-xs font-bold">${d.tipe}</span></td>
-                            <td class="p-4 ${stColor} font-semibold">${d.status}</td>
-                        </tr>
-                    `;
-                });
-            }).catch(err => {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-red-500">Error: ${err.message}</td></tr>`
-            });
-        }
-
-        let adminToken = '';
-        function loginAdmin() {
-            const pass = document.getElementById('adminPassword').value;
-            if(!pass) return;
+      const hapusData = (id) => {
+        Swal.fire({title: 'Hapus Data?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Ya, Hapus!'}).then(async (result) => {
+          if(result.isConfirmed) {
             Swal.showLoading();
-            callAPI({ action: 'loginTeacher', password: pass })
-            .then(res => {
-                if(res.status === 'success') {
-                    Swal.close(); 
-                    adminToken = res.token; 
-                    document.getElementById('adminLogin').classList.add('hidden');
-                    document.getElementById('adminDashboard').classList.remove('hidden');
-                    document.getElementById('adminPassword').value = ''; 
-                    loadDashboardData();
-                } else { 
-                    Swal.fire({icon: 'error', title: 'Gagal', text: res.message, timer: 3000, showConfirmButton: false}); 
-                }
-            }).catch((err) => Swal.fire('Error', err.message, 'error'));
+            const res = await callAPI({action: 'deleteRecord', token: adminToken.value, id: id});
+            if(res.status === 'success') loadAdminData();
+            else Swal.fire('Gagal', '', 'error');
+          }
+        });
+      };
+
+      const openEditModal = (row) => {
+        modal.mode = 'edit'; modal.data = JSON.parse(JSON.stringify(row)); modal.show = true;
+      };
+      const openManualModal = () => {
+        modal.mode = 'manual'; modal.manualClass = ''; modal.show = true;
+      };
+
+      const applyMassAction = () => {
+        filteredStudentsForManual.value.forEach(s => { s.inputKet = modal.massAction; });
+      };
+
+      const simpanModal = async () => {
+        Swal.showLoading();
+        let action = '', payload = null;
+        
+        if (modal.mode === 'edit') {
+          action = 'editRecord'; payload = modal.data;
+        } else if (modal.mode === 'manual') {
+          if(!modal.manualClass) return Swal.fire('Pilih Kelas', '', 'warning');
+          action = 'manualInput';
+          let jamDefault = new Date().toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit', timeZone: 'Asia/Jakarta'}).substring(0,5);
+          payload = filteredStudentsForManual.value.map(s => ({
+            nis: s.nis, nama: s.nama, kelas: s.kelas, tanggal: modal.manualDate, jam: jamDefault,
+            tipe: s.inputKet === 'Hadir' ? s.inputTipe : '-', 
+            status: s.inputKet === 'Hadir' ? 'Manual Input' : '-', ket: s.inputKet
+          }));
         }
 
-        function logoutAdmin() {
-            adminToken = ''; document.getElementById('adminDashboard').classList.add('hidden'); document.getElementById('adminLogin').classList.remove('hidden');
-        }
+        try {
+          const res = await callAPI({ action, token: adminToken.value, payload });
+          if(res.status === 'success') {
+            modal.show = false; loadAdminData(); Swal.fire('Tersimpan', '', 'success');
+          } else Swal.fire('Error', res.message, 'error');
+        } catch(e) { Swal.fire('Error', e.message, 'error'); }
+      };
 
-        function loadDashboardData() {
-            document.getElementById('adminTableBody').innerHTML = `<tr><td colspan="6" class="p-10 text-center"><i class="fa-solid fa-spinner fa-spin text-2xl mr-2 text-primary"></i> Memuat Data...</td></tr>`;
-            callAPI({ action: 'getDashboardData', token: adminToken })
-            .then(res => { 
-                if(res.status === 'success') { 
-                    adminData = res.data; 
-                    renderAdminTable(); 
-                } else {
-                    document.getElementById('adminTableBody').innerHTML = `<tr><td colspan="6" class="p-10 text-center text-red-500">${res.message}</td></tr>`;
-                }
-            })
-            .catch((err)=> { 
-                document.getElementById('adminTableBody').innerHTML = `<tr><td colspan="6" class="p-10 text-center text-red-500">${err.message}</td></tr>`; 
-            });
-        }
+      const simpanConfig = async () => {
+        Swal.showLoading();
+        try {
+          const res = await callAPI({ action: 'updateConfig', token: adminToken.value, payload: { masuk: config.masuk, pulang1: config.pulang1, pulang2: config.pulang2 } });
+          if(res.status === 'success') Swal.fire('Tersimpan', 'Aturan Jam Berhasil Diupdate', 'success');
+        } catch(e) {}
+      };
 
-        function renderAdminTable() {
-            const kFilter = document.getElementById('filterKelas').value;
-            const bFilter = document.getElementById('filterBulan').value; 
-            const tglHariIni = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
-            let cHadir = 0, cTelat = 0, cIzin = 0, cAlpa = 0;
+      const exportExcel = () => {
+        if(filteredAdminRecap.value.length === 0) return Swal.fire('Data Kosong', '', 'info');
+        const wb = XLSX.utils.table_to_book(document.getElementById("adminTable"), {sheet: "Laporan"});
+        XLSX.writeFile(wb, `Laporan_Absensi_${filterAdmin.bulan || 'Semua'}.xlsx`);
+      };
 
-            let filtered = adminData.filter(d => {
-                if(d.tanggal.startsWith(tglHariIni)) {
-                    if(d.ket === 'Hadir' && d.tipe === 'Datang') { cHadir++; if(d.status.toLowerCase().includes('terlambat')) cTelat++; }
-                    if(d.ket === 'Sakit' || d.ket === 'Izin') cIzin++;
-                    if(d.ket === 'Alpa' || d.ket === 'Alpha') cAlpa++;
-                }
-                let matchKelas = (kFilter === 'ALL') || (d.kelas === kFilter);
-                let matchBulan = bFilter ? d.tanggal.startsWith(bFilter) : true;
-                return matchKelas && matchBulan;
-            });
-
-            document.getElementById('statHadir').innerText = cHadir; document.getElementById('statTelat').innerText = cTelat;
-            document.getElementById('statIzin').innerText = cIzin; document.getElementById('statAlpa').innerText = cAlpa;
-
-            const tbody = document.getElementById('adminTableBody'); tbody.innerHTML = '';
-            if(filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-500">Tidak ada data.</td></tr>`; return; }
-            
-            filtered.forEach(d => {
-                let badgeTipe = d.tipe === 'Datang' ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700';
-                let stColor = (d.status.toLowerCase().includes('terlambat') || d.status.toLowerCase().includes('awal')) ? 'text-yellow-600' : 'text-primary';
-                tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50 border-b transition">
-                        <td class="p-4 text-xs text-gray-500">${d.tanggal}<br><b class="text-gray-800 text-sm">${d.jam}</b></td>
-                        <td class="p-4"><p class="font-semibold text-gray-800">${d.nama}</p><p class="text-xs text-gray-500">NIS: ${d.nis}</p></td>
-                        <td class="p-4 font-medium">${d.kelas}</td>
-                        <td class="p-4"><span class="px-2.5 py-1 rounded-md text-xs font-bold ${badgeTipe}">${d.tipe}</span></td>
-                        <td class="p-4 font-semibold ${stColor}">${d.status}</td>
-                        <td class="p-4 text-sm font-semibold">${d.ket}</td>
-                    </tr>
-                `;
-            });
-        }
-
-        function exportExcel() {
-            if(adminData.length === 0) return Swal.fire('Data Kosong', 'Tidak ada data', 'info');
-            const wb = XLSX.utils.table_to_book(document.getElementById("adminTable"), {sheet: "Absensi"});
-            XLSX.writeFile(wb, `Absensi_SMPIPBM_${document.getElementById('filterBulan').value}.xlsx`);
-        }
-    </script>
+      return {
+        currentTab, isLoading, listKelas, changeTab,
+        tipeAbsen, onScanSuccess,
+        filterRekap, publicData, filteredPublicRecap, loadPublicRecap,
+        adminToken, adminPwd, adminMenu, loginAdmin, logoutAdmin,
+        dataAbsen, dataSiswa, config, filterAdmin, stats, filteredAdminRecap, filteredStudentsForManual,
+        calculateStats, showDetailBelumAbsen, countBelumAbsen,
+        modal, hapusData, openEditModal, openManualModal, applyMassAction, simpanModal, simpanConfig, exportExcel
+      }
+    }
+  }).mount('#app');
+</script>
 </body>
 </html>
