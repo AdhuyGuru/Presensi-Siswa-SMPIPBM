@@ -79,12 +79,12 @@
     <div v-show="currentTab === 'rekap'" class="max-w-4xl mx-auto">
       <div class="glass-card p-6">
         <h2 class="text-2xl font-bold mb-6">Cari Rekap Kehadiran</h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-6">
           <select v-model="filterRekap.kelas" class="p-3 border rounded-xl bg-gray-50 font-medium focus:outline-none">
             <option value="ALL">Semua Kelas</option>
             <option v-for="k in listKelas" :key="k" :value="k">{{ k }}</option>
           </select>
+          <input v-model="filterRekap.tanggal" type="date" class="p-3 border rounded-xl bg-gray-50 focus:outline-none" title="Filter Tanggal">
           <input v-model="filterRekap.search" type="text" placeholder="Cari Nama / NIS..." class="md:col-span-2 p-3 border rounded-xl bg-gray-50 focus:outline-none">
           <button @click="loadPublicRecap" class="bg-[#047857] text-white p-3 rounded-xl hover:bg-green-700 font-bold shadow-md transition">
             <i class="fa-solid fa-rotate mr-2"></i>Refresh
@@ -174,7 +174,8 @@
                 <option value="ALL">Semua Kelas</option>
                 <option v-for="k in listKelas" :key="k" :value="k">{{ k }}</option>
               </select>
-              <input v-model="filterAdmin.bulan" type="month" class="border p-2.5 rounded-lg bg-gray-50 font-bold outline-none w-40">
+              <input v-model="filterAdmin.bulan" type="month" class="border p-2.5 rounded-lg bg-gray-50 font-bold outline-none w-40" title="Filter Bulan">
+              <input v-model="filterAdmin.tanggalTabel" type="date" class="border p-2.5 rounded-lg bg-gray-50 font-bold outline-none w-40" title="Filter Tanggal">
               <input v-model="filterAdmin.search" type="text" placeholder="Cari Nama..." class="border p-2.5 rounded-lg bg-gray-50 font-medium outline-none">
             </div>
             <div class="flex gap-2">
@@ -304,7 +305,7 @@
 
       // Rekap Publik
       const publicData = ref([]);
-      const filterRekap = reactive({ kelas: 'ALL', search: '' });
+      const filterRekap = reactive({ kelas: 'ALL', search: '', tanggal: '' });
       
       // Portal Guru
       const adminToken = ref('');
@@ -313,7 +314,7 @@
       const dataSiswa = ref([]);
       const dataAbsen = ref([]);
       const config = reactive({ masuk: '', pulang1: '', pulang2: '' });
-      const filterAdmin = reactive({ kelas: 'ALL', bulan: new Date().toISOString().substring(0, 7), tanggal: new Date().toISOString().substring(0, 10), search: '' });
+      const filterAdmin = reactive({ kelas: 'ALL', bulan: new Date().toISOString().substring(0, 7), tanggal: new Date().toISOString().substring(0, 10), tanggalTabel: '', search: '' });
       const stats = reactive({ hadir: 0, telat: 0, izin: 0, alfa: 0 });
       let chartInstance = null;
 
@@ -420,8 +421,9 @@
         let keyword = filterRekap.search.toLowerCase();
         return publicData.value.filter(r => {
           let mKelas = filterRekap.kelas === 'ALL' || r.kelas === filterRekap.kelas;
+          let mTanggal = !filterRekap.tanggal || r.tanggal === filterRekap.tanggal;
           let mSearch = !keyword || r.nama.toLowerCase().includes(keyword) || String(r.nis).includes(keyword);
-          return mKelas && mSearch;
+          return mKelas && mTanggal && mSearch;
         });
       });
 
@@ -456,8 +458,9 @@
         return dataAbsen.value.filter(r => {
           let mKelas = filterAdmin.kelas === 'ALL' || r.kelas === filterAdmin.kelas;
           let mBulan = !filterAdmin.bulan || r.tanggal.startsWith(filterAdmin.bulan);
+          let mTanggal = !filterAdmin.tanggalTabel || r.tanggal === filterAdmin.tanggalTabel;
           let mSearch = !keyword || r.nama.toLowerCase().includes(keyword);
-          return mKelas && mBulan && mSearch;
+          return mKelas && mBulan && mTanggal && mSearch;
         });
       });
 
@@ -479,8 +482,8 @@
         let absenHariIni = dataAbsen.value.filter(a => a.tanggal === filterAdmin.tanggal && a.kelas === kelasTarget).map(a => String(a.nis));
         let blm = siswaDiKelas.filter(s => !absenHariIni.includes(String(s.nis)));
         if(blm.length===0) return Swal.fire('Info', 'Semua siswa kelas ini sudah tercatat.', 'success');
-        let htmlList = blm.map(s => `<li>${s.nama}</li>`).join('');
-        Swal.fire({ title: `Belum Absen (${kelasTarget})`, html: `<ul class="text-left max-h-64 overflow-y-auto pl-5 list-decimal font-medium">${htmlList}</ul>` });
+        let htmlList = blm.map(s => `<li class="ml-2 pl-1">${s.nama}</li>`).join('');
+        Swal.fire({ title: `Belum Absen (${kelasTarget})`, html: `<ol class="text-left max-h-64 overflow-y-auto p-4 list-decimal list-inside font-medium text-gray-800">${htmlList}</ol>` });
       };
 
       const calculateStats = () => {
