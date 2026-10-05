@@ -21,10 +21,10 @@
     .nav-btn.active { color: #047857; }
     .nav-btn.active::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: #047857; border-radius: 3px 3px 0 0; }
     
-    #reader video { border-radius: 1rem; width: 100%; object-fit: cover; }
+    #reader { border-radius: 1rem; overflow: hidden; background: #000; border: none;}
+    #reader video { width: 100%; object-fit: cover; }
     .glass-card { background: white; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); overflow: hidden; }
     
-    /* Animations */
     .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
     .fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(10px); }
     .modal-overlay { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
@@ -34,7 +34,8 @@
 
 <div id="app" class="min-h-screen flex flex-col">
   
-  <header class="bg-white sticky top-0 z-40 border-b border-gray-200">
+  <!-- -->
+  <header class="bg-white sticky top-0 z-40 border-b border-gray-200 shadow-sm">
     <div class="container mx-auto px-4 py-3">
       <div class="flex items-center gap-4 justify-center md:justify-start">
         <img src="https://ppdb.ppiabaitulmaal.sch.id/wp-content/uploads/2022/10/LOGO-SMP-1337x1536.png" class="h-12 drop-shadow-sm" alt="Logo">
@@ -53,203 +54,209 @@
 
   <main class="flex-grow container mx-auto px-4 py-8 max-w-6xl">
     
-    <transition name="fade" mode="out-in">
-      <div v-if="currentTab === 'scan'" class="max-w-lg mx-auto">
-        <div class="glass-card p-6 md:p-8 text-center border-t-4 border-[#047857]">
-          <h2 class="text-2xl font-bold mb-6">Pindai Kehadiran</h2>
-          
-          <div class="flex justify-center gap-3 mb-6 bg-gray-100 p-1.5 rounded-xl">
-            <button @click="tipeAbsen = 'Datang'" :class="['flex-1 py-2.5 rounded-lg font-bold transition shadow-sm', tipeAbsen === 'Datang' ? 'bg-[#047857] text-white' : 'text-gray-500 hover:bg-gray-200']">
-              <i class="fa-solid fa-arrow-right-to-bracket mr-1"></i> Datang
-            </button>
-            <button @click="tipeAbsen = 'Pulang'" :class="['flex-1 py-2.5 rounded-lg font-bold transition shadow-sm', tipeAbsen === 'Pulang' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-200']">
-              <i class="fa-solid fa-house-chimney mr-1"></i> Pulang
-            </button>
-          </div>
-          
-          <div class="bg-gray-900 rounded-2xl p-2 mb-4 relative shadow-inner">
-            <div id="reader" class="w-full aspect-square md:aspect-video rounded-xl bg-black"></div>
-          </div>
-          <p class="text-sm text-gray-500 font-semibold bg-gray-100 inline-block px-4 py-2 rounded-full"><i class="fa-solid fa-camera mr-2"></i> Arahkan QR Code ke Kamera</p>
-        </div>
-      </div>
-
-      <div v-else-if="currentTab === 'rekap'" class="max-w-4xl mx-auto">
-        <div class="glass-card p-6">
-          <h2 class="text-2xl font-bold mb-6">Cari Rekap Kehadiran</h2>
-          
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
-            <select v-model="filterRekap.kelas" class="p-3 border rounded-xl bg-gray-50 font-medium focus:ring-2 focus:ring-green-500 outline-none">
-              <option value="ALL">Semua Kelas</option>
-              <option v-for="k in listKelas" :key="k" :value="k">{{ k }}</option>
-            </select>
-            <input v-model="filterRekap.search" type="text" placeholder="Cari Nama / NIS..." class="md:col-span-2 p-3 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-green-500 outline-none">
-            <button @click="loadPublicRecap" class="bg-[#047857] text-white p-3 rounded-xl hover:bg-green-700 font-bold shadow-md transition">
-              <i class="fa-solid fa-rotate mr-2"></i>Refresh
-            </button>
-          </div>
-
-          <div class="overflow-x-auto rounded-xl border border-gray-200">
-            <table class="w-full text-left whitespace-nowrap">
-              <thead class="bg-gray-100 text-gray-600 text-sm uppercase">
-                <tr>
-                  <th class="p-4 font-bold">Tanggal</th>
-                  <th class="p-4 font-bold">Nama Siswa</th>
-                  <th class="p-4 font-bold">Jam</th>
-                  <th class="p-4 font-bold">Tipe</th>
-                  <th class="p-4 font-bold">Status</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100 text-sm">
-                <tr v-if="isLoading" class="text-center"><td colspan="5" class="p-8 text-gray-500"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><br>Memuat Data...</td></tr>
-                <tr v-else-if="filteredPublicRecap.length === 0" class="text-center"><td colspan="5" class="p-8 text-gray-500 font-medium">Data tidak ditemukan</td></tr>
-                <tr v-for="r in filteredPublicRecap" :key="r.id" class="hover:bg-green-50/50">
-                  <td class="p-4 text-gray-500 font-medium">{{ r.tanggal }}</td>
-                  <td class="p-4"><p class="font-bold text-gray-800">{{ r.nama }}</p><p class="text-xs text-gray-400">{{ r.kelas }}</p></td>
-                  <td class="p-4 font-bold text-gray-700">{{ r.jam }}</td>
-                  <td class="p-4"><span :class="r.tipe==='Datang'?'bg-green-100 text-green-700':'bg-blue-100 text-blue-700'" class="px-2 py-1 rounded font-bold text-xs">{{ r.tipe }}</span></td>
-                  <td class="p-4 font-bold" :class="r.status.includes('Terlambat')||r.status.includes('Awal') ? 'text-red-500' : 'text-[#047857]'">{{ r.status }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div v-else-if="currentTab === 'admin'" class="w-full">
+    <!-- -->
+    <!-- Menggunakan v-show agar id="reader" tidak dihapus dari DOM, mencegah kamera crash -->
+    <div v-show="currentTab === 'scan'" class="max-w-lg mx-auto">
+      <div class="glass-card p-6 md:p-8 text-center border-t-4 border-[#047857]">
+        <h2 class="text-2xl font-bold mb-6">Pindai Kehadiran</h2>
         
-        <!-- Login Form -->
-        <div v-if="!adminToken" class="max-w-sm mx-auto glass-card p-8 border-t-4 border-blue-600 text-center mt-10">
-          <i class="fa-solid fa-user-shield text-4xl text-blue-600 mb-4"></i>
-          <h2 class="text-2xl font-bold mb-6">Portal Guru</h2>
-          <input v-model="adminPwd" @keyup.enter="loginAdmin" type="password" placeholder="Masukkan Kata Sandi..." class="w-full p-3 border rounded-xl mb-4 bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none text-center font-bold">
-          <button @click="loginAdmin" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 shadow-md">Masuk</button>
+        <div class="flex justify-center gap-3 mb-6 bg-gray-100 p-1.5 rounded-xl">
+          <button @click="tipeAbsen = 'Datang'" :class="['flex-1 py-2.5 rounded-lg font-bold transition shadow-sm', tipeAbsen === 'Datang' ? 'bg-[#047857] text-white' : 'text-gray-500 hover:bg-gray-200']">
+            <i class="fa-solid fa-arrow-right-to-bracket mr-1"></i> Datang
+          </button>
+          <button @click="tipeAbsen = 'Pulang'" :class="['flex-1 py-2.5 rounded-lg font-bold transition shadow-sm', tipeAbsen === 'Pulang' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-200']">
+            <i class="fa-solid fa-house-chimney mr-1"></i> Pulang
+          </button>
+        </div>
+        
+        <div class="bg-gray-900 rounded-2xl p-2 mb-4 relative shadow-inner">
+          <div id="reader" class="w-full aspect-square md:aspect-video rounded-xl"></div>
+          <button v-if="cameraError" @click="initScanner(true)" class="absolute inset-0 m-auto h-12 px-4 bg-red-600 text-white font-bold rounded-lg shadow-lg hover:bg-red-700">
+            <i class="fa-solid fa-rotate-right mr-2"></i>Restart Kamera
+          </button>
+        </div>
+        <p class="text-sm text-gray-500 font-semibold bg-gray-100 inline-block px-4 py-2 rounded-full"><i class="fa-solid fa-camera mr-2"></i> Arahkan QR Code ke Kamera</p>
+      </div>
+    </div>
+
+    <!-- -->
+    <div v-show="currentTab === 'rekap'" class="max-w-4xl mx-auto">
+      <div class="glass-card p-6">
+        <h2 class="text-2xl font-bold mb-6">Cari Rekap Kehadiran</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+          <select v-model="filterRekap.kelas" class="p-3 border rounded-xl bg-gray-50 font-medium focus:ring-2 focus:ring-green-500 outline-none">
+            <option value="ALL">Semua Kelas</option>
+            <option v-for="k in listKelas" :key="k" :value="k">{{ k }}</option>
+          </select>
+          <input v-model="filterRekap.search" type="text" placeholder="Cari Nama / NIS..." class="md:col-span-2 p-3 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-green-500 outline-none">
+          <button @click="loadPublicRecap" class="bg-[#047857] text-white p-3 rounded-xl hover:bg-green-700 font-bold shadow-md transition">
+            <i class="fa-solid fa-rotate mr-2"></i>Refresh
+          </button>
         </div>
 
-        <!-- Dashboard Guru -->
-        <div v-else class="space-y-6">
-          <div class="flex flex-wrap justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-            <div class="flex gap-2 overflow-x-auto">
-              <button @click="adminMenu = 'resume'" :class="['px-5 py-2.5 rounded-lg font-bold text-sm transition whitespace-nowrap', adminMenu==='resume'?'bg-blue-600 text-white shadow-md':'bg-gray-100 text-gray-600 hover:bg-gray-200']"><i class="fa-solid fa-chart-pie mr-2"></i>Resume Harian</button>
-              <button @click="adminMenu = 'kelola'" :class="['px-5 py-2.5 rounded-lg font-bold text-sm transition whitespace-nowrap', adminMenu==='kelola'?'bg-[#047857] text-white shadow-md':'bg-gray-100 text-gray-600 hover:bg-gray-200']"><i class="fa-solid fa-table-list mr-2"></i>Kelola Data</button>
-              <button @click="adminMenu = 'config'" :class="['px-5 py-2.5 rounded-lg font-bold text-sm transition whitespace-nowrap', adminMenu==='config'?'bg-purple-600 text-white shadow-md':'bg-gray-100 text-gray-600 hover:bg-gray-200']"><i class="fa-solid fa-gear mr-2"></i>Pengaturan</button>
-            </div>
-            <button @click="logoutAdmin" class="px-5 py-2.5 border border-red-200 text-red-600 rounded-lg font-bold text-sm hover:bg-red-50 transition"><i class="fa-solid fa-power-off mr-2"></i>Keluar</button>
+        <div class="overflow-x-auto rounded-xl border border-gray-200">
+          <table class="w-full text-left whitespace-nowrap">
+            <thead class="bg-gray-100 text-gray-600 text-sm uppercase">
+              <tr>
+                <th class="p-4 font-bold">Tanggal</th>
+                <th class="p-4 font-bold">Nama Siswa</th>
+                <th class="p-4 font-bold">Jam</th>
+                <th class="p-4 font-bold">Tipe</th>
+                <th class="p-4 font-bold">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 text-sm">
+              <tr v-if="isLoading" class="text-center"><td colspan="5" class="p-8 text-gray-500"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><br>Memuat Data...</td></tr>
+              <tr v-else-if="filteredPublicRecap.length === 0" class="text-center"><td colspan="5" class="p-8 text-gray-500 font-medium">Data tidak ditemukan</td></tr>
+              <tr v-for="r in filteredPublicRecap" :key="r.id" class="hover:bg-green-50/50">
+                <td class="p-4 text-gray-500 font-medium">{{ r.tanggal }}</td>
+                <td class="p-4"><p class="font-bold text-gray-800">{{ r.nama }}</p><p class="text-xs text-gray-400">{{ r.kelas }}</p></td>
+                <td class="p-4 font-bold text-gray-700">{{ r.jam }}</td>
+                <td class="p-4"><span :class="r.tipe==='Datang'?'bg-green-100 text-green-700':'bg-blue-100 text-blue-700'" class="px-2 py-1 rounded font-bold text-xs">{{ r.tipe }}</span></td>
+                <td class="p-4 font-bold" :class="r.status.includes('Terlambat')||r.status.includes('Awal') ? 'text-red-500' : 'text-[#047857]'">{{ r.status }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- -->
+    <div v-show="currentTab === 'admin'" class="w-full">
+      
+      <!-- Login -->
+      <div v-if="!adminToken" class="max-w-sm mx-auto glass-card p-8 border-t-4 border-blue-600 text-center mt-10">
+        <i class="fa-solid fa-user-shield text-4xl text-blue-600 mb-4"></i>
+        <h2 class="text-2xl font-bold mb-6">Portal Guru</h2>
+        <input v-model="adminPwd" @keyup.enter="loginAdmin" type="password" placeholder="Masukkan Password..." class="w-full p-3 border rounded-xl mb-4 bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none text-center font-bold">
+        <button @click="loginAdmin" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 shadow-md">Masuk</button>
+      </div>
+
+      <!-- Dashboard Guru -->
+      <div v-else class="space-y-6">
+        <div class="flex flex-wrap justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+          <div class="flex gap-2 overflow-x-auto">
+            <button @click="adminMenu = 'resume'" :class="['px-5 py-2.5 rounded-lg font-bold text-sm transition whitespace-nowrap', adminMenu==='resume'?'bg-blue-600 text-white shadow-md':'bg-gray-100 text-gray-600 hover:bg-gray-200']"><i class="fa-solid fa-chart-pie mr-2"></i>Resume Harian</button>
+            <button @click="adminMenu = 'kelola'" :class="['px-5 py-2.5 rounded-lg font-bold text-sm transition whitespace-nowrap', adminMenu==='kelola'?'bg-[#047857] text-white shadow-md':'bg-gray-100 text-gray-600 hover:bg-gray-200']"><i class="fa-solid fa-table-list mr-2"></i>Kelola Data</button>
+            <button @click="adminMenu = 'config'" :class="['px-5 py-2.5 rounded-lg font-bold text-sm transition whitespace-nowrap', adminMenu==='config'?'bg-purple-600 text-white shadow-md':'bg-gray-100 text-gray-600 hover:bg-gray-200']"><i class="fa-solid fa-gear mr-2"></i>Pengaturan Waktu</button>
           </div>
+          <button @click="logoutAdmin" class="px-5 py-2.5 border border-red-200 text-red-600 rounded-lg font-bold text-sm hover:bg-red-50 transition"><i class="fa-solid fa-power-off mr-2"></i>Keluar</button>
+        </div>
 
-          <div v-show="adminMenu === 'resume'" class="space-y-6">
-            <div class="glass-card p-6">
-              <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
-                <h2 class="text-xl font-bold">Resume Kehadiran</h2>
-                <input v-model="filterAdmin.tanggal" @change="calculateStats" type="date" class="border p-2.5 rounded-lg bg-gray-50 font-bold outline-none focus:ring-2 focus:ring-blue-500">
+        <!-- -->
+        <div v-show="adminMenu === 'resume'" class="space-y-6">
+          <div class="glass-card p-6">
+            <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+              <h2 class="text-xl font-bold">Resume Kehadiran</h2>
+              <input v-model="filterAdmin.tanggal" @change="calculateStats" type="date" class="border p-2.5 rounded-lg bg-gray-50 font-bold outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- Kartu Statistik -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <div class="bg-green-50 p-4 rounded-2xl border border-green-100"><p class="text-sm font-semibold text-green-700 mb-1">Sudah Hadir</p><p class="text-3xl font-extrabold text-[#047857]">{{ stats.hadir }}</p></div>
+              <div class="bg-yellow-50 p-4 rounded-2xl border border-yellow-100"><p class="text-sm font-semibold text-yellow-700 mb-1">Terlambat</p><p class="text-3xl font-extrabold text-yellow-600">{{ stats.telat }}</p></div>
+              <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><p class="text-sm font-semibold text-blue-700 mb-1">Sakit / Izin</p><p class="text-3xl font-extrabold text-blue-600">{{ stats.izin }}</p></div>
+              <div class="bg-red-50 p-4 rounded-2xl border border-red-100"><p class="text-sm font-semibold text-red-700 mb-1">Alfa / Belum Absen</p><p class="text-3xl font-extrabold text-red-600">{{ stats.alfa }}</p></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="border rounded-2xl p-4">
+                <h3 class="font-bold text-gray-700 mb-4 text-center">Persentase Kehadiran</h3>
+                <div class="relative h-64 w-full"><canvas id="chartKehadiran"></canvas></div>
               </div>
-
-              <!-- Stat Cards -->
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div class="bg-green-50 p-4 rounded-2xl border border-green-100"><p class="text-sm font-semibold text-green-700 mb-1">Sudah Hadir</p><p class="text-3xl font-extrabold text-[#047857]">{{ stats.hadir }}</p></div>
-                <div class="bg-yellow-50 p-4 rounded-2xl border border-yellow-100"><p class="text-sm font-semibold text-yellow-700 mb-1">Terlambat</p><p class="text-3xl font-extrabold text-yellow-600">{{ stats.telat }}</p></div>
-                <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><p class="text-sm font-semibold text-blue-700 mb-1">Sakit / Izin</p><p class="text-3xl font-extrabold text-blue-600">{{ stats.izin }}</p></div>
-                <div class="bg-red-50 p-4 rounded-2xl border border-red-100"><p class="text-sm font-semibold text-red-700 mb-1">Alfa / Belum Absen</p><p class="text-3xl font-extrabold text-red-600">{{ stats.alfa }}</p></div>
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Grafik -->
-                <div class="border rounded-2xl p-4">
-                  <h3 class="font-bold text-gray-700 mb-4 text-center">Persentase Kehadiran</h3>
-                  <div class="relative h-64 w-full"><canvas id="chartKehadiran"></canvas></div>
-                </div>
-                <!-- Detail Per Kelas -->
-                <div class="border rounded-2xl p-4 flex flex-col">
-                  <h3 class="font-bold text-gray-700 mb-4">Belum Absen Hari Ini (Per Kelas)</h3>
-                  <div class="overflow-y-auto max-h-64 space-y-2 flex-grow pr-2">
-                    <div v-for="(k, idx) in listKelas" :key="idx" class="flex justify-between items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer border" @click="showDetailBelumAbsen(k)">
-                      <span class="font-bold text-gray-700">{{ k }}</span>
-                      <span class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-bold">{{ countBelumAbsen(k) }} Siswa</span>
-                    </div>
+              <div class="border rounded-2xl p-4 flex flex-col">
+                <h3 class="font-bold text-gray-700 mb-4">Belum Absen Hari Ini (Klik untuk Detail)</h3>
+                <div class="overflow-y-auto max-h-64 space-y-2 flex-grow pr-2">
+                  <div v-for="(k, idx) in listKelas" :key="idx" class="flex justify-between items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer border" @click="showDetailBelumAbsen(k)">
+                    <span class="font-bold text-gray-700">{{ k }}</span>
+                    <span class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-bold shadow-sm">{{ countBelumAbsen(k) }} Siswa</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          <div v-show="adminMenu === 'kelola'" class="glass-card p-6">
-            <div class="flex flex-col md:flex-row justify-between gap-4 mb-6">
-              <div class="flex flex-wrap gap-2">
-                <select v-model="filterAdmin.kelas" class="border p-2.5 rounded-lg bg-gray-50 font-bold outline-none w-32">
-                  <option value="ALL">Semua Kelas</option>
-                  <option v-for="k in listKelas" :key="k" :value="k">{{ k }}</option>
-                </select>
-                <input v-model="filterAdmin.bulan" type="month" class="border p-2.5 rounded-lg bg-gray-50 font-bold outline-none w-40">
-                <input v-model="filterAdmin.search" type="text" placeholder="Cari Nama..." class="border p-2.5 rounded-lg bg-gray-50 font-medium outline-none">
-              </div>
-              <div class="flex gap-2">
-                <button @click="openManualModal" class="bg-[#047857] text-white px-4 py-2.5 rounded-lg font-bold shadow-md hover:bg-green-700"><i class="fa-solid fa-plus mr-2"></i>Input Manual</button>
-                <button @click="exportExcel" class="bg-blue-600 text-white px-4 py-2.5 rounded-lg font-bold shadow-md hover:bg-blue-700"><i class="fa-solid fa-file-excel mr-2"></i>Excel</button>
-              </div>
+        <!-- -->
+        <div v-show="adminMenu === 'kelola'" class="glass-card p-6">
+          <div class="flex flex-col md:flex-row justify-between gap-4 mb-6">
+            <div class="flex flex-wrap gap-2">
+              <select v-model="filterAdmin.kelas" class="border p-2.5 rounded-lg bg-gray-50 font-bold outline-none w-32">
+                <option value="ALL">Semua Kelas</option>
+                <option v-for="k in listKelas" :key="k" :value="k">{{ k }}</option>
+              </select>
+              <input v-model="filterAdmin.bulan" type="month" class="border p-2.5 rounded-lg bg-gray-50 font-bold outline-none w-40">
+              <input v-model="filterAdmin.search" type="text" placeholder="Cari Nama..." class="border p-2.5 rounded-lg bg-gray-50 font-medium outline-none">
             </div>
-
-            <div class="overflow-x-auto rounded-xl border border-gray-200">
-              <table id="adminTable" class="w-full text-left whitespace-nowrap">
-                <thead class="bg-gray-100 text-gray-600 text-sm uppercase">
-                  <tr>
-                    <th class="p-4 font-bold">Tanggal/Jam</th>
-                    <th class="p-4 font-bold">Siswa</th>
-                    <th class="p-4 font-bold">Kelas</th>
-                    <th class="p-4 font-bold">Tipe/Status</th>
-                    <th class="p-4 font-bold">Ket</th>
-                    <th class="p-4 font-bold text-center">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100 text-sm">
-                  <tr v-if="isLoading" class="text-center"><td colspan="6" class="p-8"><i class="fa-solid fa-spinner fa-spin text-2xl"></i></td></tr>
-                  <tr v-else-if="filteredAdminRecap.length === 0" class="text-center"><td colspan="6" class="p-8 text-gray-500">Tidak ada data.</td></tr>
-                  <tr v-for="r in filteredAdminRecap" :key="r.id" class="hover:bg-gray-50">
-                    <td class="p-4"><p class="font-bold text-gray-800">{{ r.tanggal }}</p><p class="text-xs font-bold text-gray-500">{{ r.jam }}</p></td>
-                    <td class="p-4"><p class="font-bold text-gray-800">{{ r.nama }}</p><p class="text-xs text-gray-400">{{ r.nis }}</p></td>
-                    <td class="p-4 font-bold text-gray-600">{{ r.kelas }}</td>
-                    <td class="p-4">
-                      <p><span class="font-bold text-xs" :class="r.tipe==='Datang'?'text-green-600':'text-blue-600'">{{ r.tipe }}</span></p>
-                      <p class="font-bold text-xs mt-1" :class="r.status.includes('Terlambat')?'text-red-500':''">{{ r.status }}</p>
-                    </td>
-                    <td class="p-4 font-bold">{{ r.ket }}</td>
-                    <td class="p-4 text-center">
-                      <button @click="openEditModal(r)" class="w-8 h-8 rounded bg-yellow-100 text-yellow-600 hover:bg-yellow-200 mr-2"><i class="fa-solid fa-pen"></i></button>
-                      <button @click="hapusData(r.id)" class="w-8 h-8 rounded bg-red-100 text-red-600 hover:bg-red-200"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <div class="flex gap-2">
+              <button @click="openManualModal" class="bg-[#047857] text-white px-4 py-2.5 rounded-lg font-bold shadow-md hover:bg-green-700"><i class="fa-solid fa-plus mr-2"></i>Input Manual</button>
+              <button @click="exportExcel" class="bg-blue-600 text-white px-4 py-2.5 rounded-lg font-bold shadow-md hover:bg-blue-700"><i class="fa-solid fa-file-excel mr-2"></i>Excel</button>
             </div>
           </div>
 
-          <div v-show="adminMenu === 'config'" class="glass-card p-6 max-w-lg mx-auto">
-            <h2 class="text-xl font-bold mb-6 border-b pb-4">Pengaturan Jam</h2>
-            <div class="space-y-4">
-              <div>
-                <label class="block text-sm font-bold text-gray-600 mb-1">Batas Jam Masuk (Terlambat jika lewat)</label>
-                <input type="time" v-model="config.masuk" class="w-full border p-3 rounded-lg font-bold">
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-gray-600 mb-1">Jam Pulang Normal (Senin, Selasa, Kamis)</label>
-                <input type="time" v-model="config.pulang1" class="w-full border p-3 rounded-lg font-bold">
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-gray-600 mb-1">Jam Pulang Cepat (Rabu, Jumat)</label>
-                <input type="time" v-model="config.pulang2" class="w-full border p-3 rounded-lg font-bold">
-              </div>
-              <button @click="simpanConfig" class="w-full bg-purple-600 text-white font-bold py-3 rounded-lg mt-4 hover:bg-purple-700 shadow-md">Simpan Pengaturan</button>
+          <div class="overflow-x-auto rounded-xl border border-gray-200">
+            <table id="adminTable" class="w-full text-left whitespace-nowrap">
+              <thead class="bg-gray-100 text-gray-600 text-sm uppercase">
+                <tr>
+                  <th class="p-4 font-bold">Tanggal/Jam</th>
+                  <th class="p-4 font-bold">Siswa</th>
+                  <th class="p-4 font-bold">Kelas</th>
+                  <th class="p-4 font-bold">Tipe/Status</th>
+                  <th class="p-4 font-bold">Ket</th>
+                  <th class="p-4 font-bold text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 text-sm">
+                <tr v-if="isLoading" class="text-center"><td colspan="6" class="p-8"><i class="fa-solid fa-spinner fa-spin text-2xl text-green-600"></i></td></tr>
+                <tr v-else-if="filteredAdminRecap.length === 0" class="text-center"><td colspan="6" class="p-8 text-gray-500">Tidak ada data presensi.</td></tr>
+                <tr v-for="r in filteredAdminRecap" :key="r.id" class="hover:bg-gray-50">
+                  <td class="p-4"><p class="font-bold text-gray-800">{{ r.tanggal }}</p><p class="text-xs font-bold text-gray-500">{{ r.jam }}</p></td>
+                  <td class="p-4"><p class="font-bold text-gray-800">{{ r.nama }}</p><p class="text-xs text-gray-400">{{ r.nis }}</p></td>
+                  <td class="p-4 font-bold text-gray-600">{{ r.kelas }}</td>
+                  <td class="p-4">
+                    <p><span class="font-bold text-xs" :class="r.tipe==='Datang'?'text-green-600':'text-blue-600'">{{ r.tipe }}</span></p>
+                    <p class="font-bold text-xs mt-1" :class="r.status.includes('Terlambat')?'text-red-500':''">{{ r.status }}</p>
+                  </td>
+                  <td class="p-4 font-bold">{{ r.ket }}</td>
+                  <td class="p-4 text-center">
+                    <button @click="openEditModal(r)" class="w-8 h-8 rounded bg-yellow-100 text-yellow-600 hover:bg-yellow-200 mr-2" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                    <button @click="hapusData(r.id)" class="w-8 h-8 rounded bg-red-100 text-red-600 hover:bg-red-200" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- -->
+        <div v-show="adminMenu === 'config'" class="glass-card p-6 max-w-lg mx-auto">
+          <h2 class="text-xl font-bold mb-6 border-b pb-4">Pengaturan Jam Kedatangan & Pulang</h2>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-bold text-gray-600 mb-1">Batas Jam Masuk (Terlambat jika lewat)</label>
+              <input type="time" v-model="config.masuk" class="w-full border p-3 rounded-lg font-bold bg-gray-50">
             </div>
+            <div>
+              <label class="block text-sm font-bold text-gray-600 mb-1">Jam Pulang Normal (Senin, Selasa, Kamis)</label>
+              <input type="time" v-model="config.pulang1" class="w-full border p-3 rounded-lg font-bold bg-gray-50">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-gray-600 mb-1">Jam Pulang Cepat (Rabu, Jumat)</label>
+              <input type="time" v-model="config.pulang2" class="w-full border p-3 rounded-lg font-bold bg-gray-50">
+            </div>
+            <button @click="simpanConfig" class="w-full bg-purple-600 text-white font-bold py-3 rounded-lg mt-4 hover:bg-purple-700 shadow-md">Simpan Pengaturan</button>
           </div>
         </div>
       </div>
-    </transition>
+    </div>
   </main>
 
+  <!-- -->
   <div v-if="modal.show" class="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-      
       <div class="p-5 border-b flex justify-between items-center bg-gray-50">
-        <h3 class="font-bold text-xl text-gray-800">{{ modal.mode === 'edit' ? 'Edit Presensi' : 'Input Manual / Rombongan' }}</h3>
+        <h3 class="font-bold text-xl text-gray-800">{{ modal.mode === 'edit' ? 'Edit Presensi' : 'Input Manual Rombongan Kelas' }}</h3>
         <button @click="modal.show = false" class="text-gray-400 hover:text-red-500"><i class="fa-solid fa-times text-2xl"></i></button>
       </div>
       
@@ -257,43 +264,43 @@
         <!-- MODAL EDIT -->
         <div v-if="modal.mode === 'edit'" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
-            <div><label class="text-xs font-bold text-gray-500">Tanggal</label><input type="date" v-model="modal.data.tanggal" class="w-full border p-2.5 rounded-lg font-bold"></div>
-            <div><label class="text-xs font-bold text-gray-500">Jam</label><input type="time" v-model="modal.data.jam" class="w-full border p-2.5 rounded-lg font-bold"></div>
-            <div><label class="text-xs font-bold text-gray-500">Tipe</label>
-              <select v-model="modal.data.tipe" class="w-full border p-2.5 rounded-lg font-bold"><option value="Datang">Datang</option><option value="Pulang">Pulang</option></select>
+            <div><label class="text-xs font-bold text-gray-500">Tanggal</label><input type="date" v-model="modal.data.tanggal" class="w-full border p-2.5 rounded-lg font-bold bg-gray-50"></div>
+            <div><label class="text-xs font-bold text-gray-500">Jam</label><input type="time" v-model="modal.data.jam" class="w-full border p-2.5 rounded-lg font-bold bg-gray-50"></div>
+            <div><label class="text-xs font-bold text-gray-500">Tipe Absen</label>
+              <select v-model="modal.data.tipe" class="w-full border p-2.5 rounded-lg font-bold bg-gray-50"><option value="Datang">Datang</option><option value="Pulang">Pulang</option><option value="-">-</option></select>
             </div>
-            <div><label class="text-xs font-bold text-gray-500">Status</label>
-              <select v-model="modal.data.status" class="w-full border p-2.5 rounded-lg font-bold"><option value="Tepat Waktu">Tepat Waktu</option><option value="Terlambat">Terlambat</option><option value="Pulang Lebih Awal">Pulang Lebih Awal</option></select>
+            <div><label class="text-xs font-bold text-gray-500">Status Waktu</label>
+              <select v-model="modal.data.status" class="w-full border p-2.5 rounded-lg font-bold bg-gray-50"><option value="Tepat Waktu">Tepat Waktu</option><option value="Terlambat">Terlambat</option><option value="Pulang Lebih Awal">Pulang Lebih Awal</option><option value="Manual Input">Manual Input</option><option value="-">-</option></select>
             </div>
-            <div class="col-span-2"><label class="text-xs font-bold text-gray-500">Keterangan</label>
-              <select v-model="modal.data.ket" class="w-full border p-2.5 rounded-lg font-bold"><option value="Hadir">Hadir</option><option value="Sakit">Sakit</option><option value="Izin">Izin</option><option value="Alfa">Alfa</option></select>
+            <div class="col-span-2"><label class="text-xs font-bold text-gray-500">Keterangan Kehadiran</label>
+              <select v-model="modal.data.ket" class="w-full border p-2.5 rounded-lg font-bold bg-gray-50"><option value="Hadir">Hadir</option><option value="Sakit">Sakit</option><option value="Izin">Izin</option><option value="Alfa">Alfa</option></select>
             </div>
           </div>
         </div>
 
-        <!-- MODAL MANUAL / ROMBONGAN -->
+        <!-- MODAL MANUAL ROMBONGAN -->
         <div v-if="modal.mode === 'manual'" class="space-y-4">
           <div class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border">
              <div><label class="text-xs font-bold text-gray-500">Pilih Kelas</label>
-               <select v-model="modal.manualClass" class="w-full border p-2.5 rounded-lg font-bold"><option value="">Pilih...</option><option v-for="k in listKelas" :value="k">{{k}}</option></select>
+               <select v-model="modal.manualClass" class="w-full border p-2.5 rounded-lg font-bold bg-white"><option value="">Pilih...</option><option v-for="k in listKelas" :value="k">{{k}}</option></select>
              </div>
-             <div><label class="text-xs font-bold text-gray-500">Tanggal Absen</label><input type="date" v-model="modal.manualDate" class="w-full border p-2.5 rounded-lg font-bold"></div>
+             <div><label class="text-xs font-bold text-gray-500">Tanggal Absen</label><input type="date" v-model="modal.manualDate" class="w-full border p-2.5 rounded-lg font-bold bg-white"></div>
           </div>
 
           <div v-if="modal.manualClass" class="border rounded-xl overflow-hidden">
             <div class="bg-blue-50 p-3 border-b flex justify-between items-center">
-              <span class="font-bold text-sm text-blue-800">Set Massal (Semua Siswa di Bawah):</span>
+              <span class="font-bold text-sm text-blue-800">Set Otomatis Seluruh Anak:</span>
               <div class="flex gap-2">
                 <select v-model="modal.massAction" class="border p-1.5 text-sm rounded bg-white font-bold"><option value="Hadir">Hadir</option><option value="Sakit">Sakit</option><option value="Izin">Izin</option><option value="Alfa">Alfa</option></select>
-                <button @click="applyMassAction" class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm font-bold hover:bg-blue-700">Terapkan</button>
+                <button @click="applyMassAction" class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm font-bold hover:bg-blue-700 shadow-sm">Terapkan ke Semua</button>
               </div>
             </div>
             <div class="max-h-64 overflow-y-auto p-2 space-y-2 bg-gray-50">
                <div v-for="s in filteredStudentsForManual" :key="s.nis" class="flex justify-between items-center bg-white p-2.5 border rounded-lg shadow-sm">
                  <div><p class="font-bold text-sm">{{s.nama}}</p><p class="text-xs text-gray-400">{{s.nis}}</p></div>
                  <div class="flex gap-2 items-center">
-                   <select v-model="s.inputKet" class="border p-1.5 rounded text-sm font-bold bg-gray-50"><option value="Hadir">Hadir</option><option value="Sakit">Sakit</option><option value="Izin">Izin</option><option value="Alfa">Alfa</option></select>
-                   <select v-if="s.inputKet==='Hadir'" v-model="s.inputTipe" class="border p-1.5 rounded text-sm font-bold bg-green-50 text-green-700"><option value="Datang">Datang</option><option value="Pulang">Pulang</option></select>
+                   <select v-model="s.inputKet" class="border p-1.5 rounded text-sm font-bold bg-gray-50 outline-none focus:ring-1 focus:ring-blue-500"><option value="Hadir">Hadir</option><option value="Sakit">Sakit</option><option value="Izin">Izin</option><option value="Alfa">Alfa</option></select>
+                   <select v-if="s.inputKet==='Hadir'" v-model="s.inputTipe" class="border p-1.5 rounded text-sm font-bold bg-green-50 text-green-700 outline-none focus:ring-1 focus:ring-green-500"><option value="Datang">Datang</option><option value="Pulang">Pulang</option></select>
                  </div>
                </div>
             </div>
@@ -303,7 +310,7 @@
       
       <div class="p-5 border-t bg-gray-50 flex justify-end gap-3">
         <button @click="modal.show = false" class="px-5 py-2.5 rounded-lg font-bold text-gray-600 hover:bg-gray-200">Batal</button>
-        <button @click="simpanModal" class="bg-[#047857] text-white px-5 py-2.5 rounded-lg font-bold hover:bg-green-700 shadow-md">Simpan Data</button>
+        <button @click="simpanModal" class="bg-[#047857] text-white px-5 py-2.5 rounded-lg font-bold hover:bg-green-700 shadow-md"><i class="fa-solid fa-save mr-2"></i>Simpan Data</button>
       </div>
     </div>
   </div>
@@ -313,28 +320,28 @@
 <script>
   // ====================================================================================
   // 1. GANTI URL INI DENGAN URL DEPLOYMENT APPS SCRIPT YANG BARU!
-  const API_URL = 'https://script.google.com/macros/s/AKfycbz1OD1cilAqJLKYfPMW7P-FDrMbcQmR9lzw84PQX994g8FWfhONkhJH8GQVc2zQHOJcrg/exec';
+  const API_URL = 'https://script.google.com/macros/s/AKfycbyq5e5dVVL2_BFlpudtBAH6D-RrHrh0Doers2bkfdDXINXB0nDvRow8hN8eLm2BNdW0/exec';
   // ====================================================================================
 
   const { createApp, ref, reactive, computed, onMounted, nextTick } = Vue;
 
   createApp({
     setup() {
-      // State Navigasi & Umum
-      const currentTab = ref('scan');
+      //      const currentTab = ref('scan');
       const isLoading = ref(false);
       const listKelas = ['7 A1','7 A2','7 B1','7 B2','8 A1','8 A2','8 B1','8 B2','9 A1','9 A2','9 B1','9 B2'];
       
-      // State Scanner
+      // Scanner States
       const tipeAbsen = ref('Datang');
       let html5QrcodeScanner = null;
       let isScanning = false;
+      const cameraError = ref(false);
 
-      // State Data Publik
+      // Data Umum
       const publicData = ref([]);
       const filterRekap = reactive({ kelas: 'ALL', search: '' });
       
-      // State Admin
+      // Data Portal Guru
       const adminToken = ref('');
       const adminPwd = ref('');
       const adminMenu = ref('resume');
@@ -344,52 +351,80 @@
       
       const filterAdmin = reactive({ 
         kelas: 'ALL', 
-        bulan: new Date().toISOString().substring(0, 7), // YYYY-MM
-        tanggal: new Date().toISOString().substring(0, 10), // YYYY-MM-DD
+        bulan: new Date().toISOString().substring(0, 7),
+        tanggal: new Date().toISOString().substring(0, 10),
         search: '' 
       });
 
       const stats = reactive({ hadir: 0, telat: 0, izin: 0, alfa: 0 });
       let chartInstance = null;
 
-      // State Modal (CRUD)
       const modal = reactive({
         show: false, mode: '', data: {}, manualClass: '', manualDate: new Date().toISOString().substring(0, 10), massAction: 'Hadir'
       });
 
-      // Menggunakan Form URL Encoded untuk Bypass CORS
-      const callAPI = async (payload) => {
+      //      const callAPI = async (payload) => {
         try {
+          // MENGGUNAKAN METODE URL-ENCODED AGAR LOLOS CORS DENGAN SEMPURNA
+          const formData = new URLSearchParams();
+          formData.append('data', JSON.stringify(payload));
+          
           const res = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: 'data=' + encodeURIComponent(JSON.stringify(payload))
+            body: formData
           });
-          return await res.json();
+          const textRes = await res.text();
+          try {
+             return JSON.parse(textRes);
+          } catch(errJSON) {
+             throw new Error("Respon Server Rusak: " + textRes.substring(0,50));
+          }
         } catch (e) {
-          throw new Error("Koneksi API Gagal. Pastikan URL benar dan terhubung internet.");
+          throw new Error(e.message || "Gagal menghubungi server Apps Script.");
         }
       };
 
-      const initScanner = () => {
+      //      const initScanner = (forceRestart = false) => {
+        cameraError.value = false;
+        if (forceRestart && html5QrcodeScanner) {
+            html5QrcodeScanner.clear().catch(e => {});
+            html5QrcodeScanner = null;
+        }
+
         if (!html5QrcodeScanner) {
           html5QrcodeScanner = new Html5Qrcode("reader");
-          html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, onScanSuccess, ()=>{})
-          .catch(e => console.log("Camera err", e));
-        }
-      };
-      const stopScanner = () => {
-        if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
-          html5QrcodeScanner.stop().then(() => { html5QrcodeScanner.clear(); html5QrcodeScanner = null; }).catch(e=>{});
+          html5QrcodeScanner.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            onScanSuccess,
+            (error) => { /* ignore background scan errors */ }
+          ).catch((err) => {
+            console.error("Camera Init Error:", err);
+            cameraError.value = true;
+            Swal.fire('Kamera Diblokir', 'Pastikan browser Anda mengizinkan akses kamera untuk website ini.', 'error');
+          });
+        } else if (html5QrcodeScanner.getState() === 3 /* PAUSED */) {
+          html5QrcodeScanner.resume();
         }
       };
 
-      const onScanSuccess = async (decodedText) => {
+      const stopScanner = () => {
+        if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
+          html5QrcodeScanner.pause(true); // Jeda saja agar cepat saat tab dibuka lagi
+        }
+      };
+
+      //      const onScanSuccess = async (decodedText) => {
         if (isScanning) return;
-        isScanning = true; // Kunci scanner
-        if (html5QrcodeScanner && html5QrcodeScanner.getState() === 2) html5QrcodeScanner.pause(true); // Bekukan kamera
+        isScanning = true;
         
-        Swal.fire({ title: 'Mencatat...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        // JEDA KAMERA SECARA FISIK UNTUK MENCEGAH DOUBLE SCAN
+        if (html5QrcodeScanner && html5QrcodeScanner.getState() === 2) {
+            html5QrcodeScanner.pause(true);
+        }
+        
+        Swal.fire({ title: 'Menghubungi Server...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         
         try {
           const res = await callAPI({ action: 'scan', nis: decodedText, tipe: tipeAbsen.value });
@@ -397,35 +432,37 @@
             Swal.fire({
               icon: res.data.status.includes('Terlambat') ? 'warning' : 'success',
               title: res.data.nama, html: `Tipe: <b>${res.data.tipe}</b><br>Jam: <b>${res.data.jam}</b><br>Status: <b class="${res.data.status.includes('Terlambat')?'text-red-500':'text-green-600'}">${res.data.status}</b>`,
-              timer: 3000, showConfirmButton: false
+              timer: 3500, showConfirmButton: false
             });
           } else {
             Swal.fire('Ditolak', res.message, 'error');
           }
         } catch (e) { Swal.fire('Error', e.message, 'error'); }
         
-        // Jeda 2.5 detik sebelum bisa scan lagi
+        // Kamera akan resume otomatis setelah 3 detik
         setTimeout(() => {
           isScanning = false;
           if (html5QrcodeScanner && html5QrcodeScanner.getState() === 3) html5QrcodeScanner.resume();
-        }, 2500);
+        }, 3000);
       };
 
       const changeTab = (tab) => {
         currentTab.value = tab;
-        if (tab === 'scan') setTimeout(initScanner, 300);
-        else stopScanner();
-
+        if (tab === 'scan') {
+            setTimeout(() => initScanner(false), 200);
+        } else {
+            stopScanner();
+        }
         if (tab === 'rekap' && publicData.value.length === 0) loadPublicRecap();
         if (tab === 'admin' && adminToken.value) loadAdminData();
       };
 
-      const loadPublicRecap = async () => {
+      //      const loadPublicRecap = async () => {
         isLoading.value = true;
         try {
           const res = await callAPI({ action: 'getRecap' });
           if(res.status === 'success') publicData.value = res.data;
-        } catch(e) { Swal.fire('Error', e.message, 'error'); }
+        } catch(e) { Swal.fire('Gagal', e.message, 'error'); }
         isLoading.value = false;
       };
 
@@ -438,7 +475,7 @@
         });
       });
 
-      const loginAdmin = async () => {
+      //      const loginAdmin = async () => {
         if(!adminPwd.value) return;
         Swal.showLoading();
         try {
@@ -448,11 +485,11 @@
             adminPwd.value = '';
             Swal.close();
             loadAdminData();
-          } else Swal.fire('Gagal', res.message, 'error');
+          } else Swal.fire('Ditolak', res.message, 'error');
         } catch(e) { Swal.fire('Error', e.message, 'error'); }
       };
       
-      const logoutAdmin = () => { adminToken.value = ''; adminMenu.value = 'resume'; publicData.value = []; dataAbsen.value = []; };
+      const logoutAdmin = () => { adminToken.value = ''; adminMenu.value = 'resume'; };
 
       const loadAdminData = async () => {
         isLoading.value = true;
@@ -462,8 +499,11 @@
             dataAbsen.value = res.absensi; dataSiswa.value = res.siswa;
             config.masuk = res.config.masuk; config.pulang1 = res.config.pulang1; config.pulang2 = res.config.pulang2;
             calculateStats();
-          } else if(res.status === 'error') logoutAdmin();
-        } catch(e) { Swal.fire('Error', e.message, 'error'); }
+          } else if(res.status === 'error') {
+            Swal.fire('Sesi Habis', res.message, 'error');
+            logoutAdmin();
+          }
+        } catch(e) { Swal.fire('Error API', e.message, 'error'); }
         isLoading.value = false;
       };
 
@@ -477,19 +517,17 @@
         });
       });
 
-      // Filter list siswa utk form input rombongan
       const filteredStudentsForManual = computed(() => {
         if(!modal.manualClass) return [];
         let list = dataSiswa.value.filter(s => s.kelas === modal.manualClass);
-        // Inject reactive input properties
         list.forEach(s => { if(!s.inputKet) { s.inputKet = 'Hadir'; s.inputTipe = 'Datang'; } });
         return list;
       });
 
-      const countBelumAbsen = (kelasTarget) => {
-        let siswaDiKelas = dataSiswa.value.filter(s => s.kelas === kelasTarget).map(s => s.nis);
+      //      const countBelumAbsen = (kelasTarget) => {
+        let siswaDiKelas = dataSiswa.value.filter(s => s.kelas === kelasTarget).map(s => String(s.nis));
         let absenHariIni = dataAbsen.value.filter(a => a.tanggal === filterAdmin.tanggal && a.kelas === kelasTarget).map(a => String(a.nis));
-        let blm = siswaDiKelas.filter(nis => !absenHariIni.includes(String(nis)));
+        let blm = siswaDiKelas.filter(nis => !absenHariIni.includes(nis));
         return blm.length;
       };
 
@@ -497,7 +535,7 @@
         let siswaDiKelas = dataSiswa.value.filter(s => s.kelas === kelasTarget);
         let absenHariIni = dataAbsen.value.filter(a => a.tanggal === filterAdmin.tanggal && a.kelas === kelasTarget).map(a => String(a.nis));
         let blm = siswaDiKelas.filter(s => !absenHariIni.includes(String(s.nis)));
-        if(blm.length===0) return Swal.fire('Info', 'Semua siswa kelas ini sudah tercatat.', 'success');
+        if(blm.length===0) return Swal.fire('Info', 'Semua siswa di kelas ini sudah tercatat.', 'success');
         let htmlList = blm.map(s => `<li>${s.nama}</li>`).join('');
         Swal.fire({ title: `Belum Absen (${kelasTarget})`, html: `<ul class="text-left max-h-64 overflow-y-auto pl-5 list-decimal font-medium">${htmlList}</ul>` });
       };
@@ -519,7 +557,7 @@
         });
         
         let totalSiswa = dataSiswa.value.length;
-        stats.alfa += (totalSiswa - countedNis.size); // Siswa yg sama sekali blm diabsen dianggap Alfa/Belum
+        stats.alfa += (totalSiswa - countedNis.size); // Yang sama sekali belum absen masuk ke Alfa
         renderChart();
       };
 
@@ -539,13 +577,13 @@
         });
       };
 
-      const hapusData = (id) => {
-        Swal.fire({title: 'Hapus Data?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Ya, Hapus!'}).then(async (result) => {
+      //      const hapusData = (id) => {
+        Swal.fire({title: 'Hapus Data?', text: "Data ini akan dihilangkan selamanya.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Ya, Hapus!'}).then(async (result) => {
           if(result.isConfirmed) {
             Swal.showLoading();
             const res = await callAPI({action: 'deleteRecord', token: adminToken.value, id: id});
             if(res.status === 'success') loadAdminData();
-            else Swal.fire('Gagal', '', 'error');
+            else Swal.fire('Gagal', res.message, 'error');
           }
         });
       };
@@ -568,7 +606,7 @@
         if (modal.mode === 'edit') {
           action = 'editRecord'; payload = modal.data;
         } else if (modal.mode === 'manual') {
-          if(!modal.manualClass) return Swal.fire('Pilih Kelas', '', 'warning');
+          if(!modal.manualClass) return Swal.fire('Pilih Kelas', 'Pilih kelas terlebih dahulu.', 'warning');
           action = 'manualInput';
           let jamDefault = new Date().toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit', timeZone: 'Asia/Jakarta'}).substring(0,5);
           payload = filteredStudentsForManual.value.map(s => ({
@@ -581,7 +619,7 @@
         try {
           const res = await callAPI({ action, token: adminToken.value, payload });
           if(res.status === 'success') {
-            modal.show = false; loadAdminData(); Swal.fire('Tersimpan', '', 'success');
+            modal.show = false; loadAdminData(); Swal.fire('Tersimpan', 'Data berhasil diperbarui.', 'success');
           } else Swal.fire('Error', res.message, 'error');
         } catch(e) { Swal.fire('Error', e.message, 'error'); }
       };
@@ -591,18 +629,26 @@
         try {
           const res = await callAPI({ action: 'updateConfig', token: adminToken.value, payload: { masuk: config.masuk, pulang1: config.pulang1, pulang2: config.pulang2 } });
           if(res.status === 'success') Swal.fire('Tersimpan', 'Aturan Jam Berhasil Diupdate', 'success');
-        } catch(e) {}
+          else Swal.fire('Gagal', res.message, 'error');
+        } catch(e) { Swal.fire('Error', e.message, 'error'); }
       };
 
       const exportExcel = () => {
-        if(filteredAdminRecap.value.length === 0) return Swal.fire('Data Kosong', '', 'info');
+        if(filteredAdminRecap.value.length === 0) return Swal.fire('Data Kosong', 'Tidak ada data untuk diekspor.', 'info');
         const wb = XLSX.utils.table_to_book(document.getElementById("adminTable"), {sheet: "Laporan"});
         XLSX.writeFile(wb, `Laporan_Absensi_${filterAdmin.bulan || 'Semua'}.xlsx`);
       };
 
+      // Memastikan Scanner menyala pertama kali jika tab aktif
+      onMounted(() => {
+          if (currentTab.value === 'scan') {
+              setTimeout(() => initScanner(false), 500);
+          }
+      });
+
       return {
         currentTab, isLoading, listKelas, changeTab,
-        tipeAbsen, onScanSuccess,
+        tipeAbsen, onScanSuccess, cameraError, initScanner,
         filterRekap, publicData, filteredPublicRecap, loadPublicRecap,
         adminToken, adminPwd, adminMenu, loginAdmin, logoutAdmin,
         dataAbsen, dataSiswa, config, filterAdmin, stats, filteredAdminRecap, filteredStudentsForManual,
