@@ -349,48 +349,72 @@
         }
       };
 
-      const initScanner = (forceRestart = false) => {
+      const initScanner = async (forceRestart = false) => {
         cameraError.value = false;
-        if (forceRestart && html5QrcodeScanner) {
-            html5QrcodeScanner.clear().catch(e => {});
-            html5QrcodeScanner = null;
-        }
+        try {
+          if (forceRestart && html5QrcodeScanner) {
+              try { await html5QrcodeScanner.stop(); } catch(e){}
+              html5QrcodeScanner.clear();
+              html5QrcodeScanner = null;
+          }
 
-        if (!html5QrcodeScanner) {
-          html5QrcodeScanner = new Html5Qrcode("reader");
-          html5QrcodeScanner.start(
-            { facingMode: cameraFacingMode.value }, // Menggunakan state kamera (depan/belakang)
-            { fps: 10, qrbox: { width: 250, height: 250 } },
-            onScanSuccess,
-            (error) => { /* abaikan error latar belakang */ }
-          ).catch((err) => {
-            cameraError.value = true;
-            Swal.fire('Kamera Diblokir', 'Pastikan izin kamera diaktifkan untuk situs ini.', 'error');
-          });
-        } else if (html5QrcodeScanner.getState() === 3) {
-          html5QrcodeScanner.resume();
+          if (!html5QrcodeScanner) {
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            // Await digunakan agar program menunggu sampai lensa benar-benar siap
+            await html5QrcodeScanner.start(
+              { facingMode: cameraFacingMode.value },
+              { fps: 10, qrbox: { width: 250, height: 250 } },
+              onScanSuccess,
+              (error) => { /* abaikan error latar belakang */ }
+            );
+          } else if (html5QrcodeScanner.getState() === 3) { // 3 = PAUSED
+            html5QrcodeScanner.resume();
+          }
+        } catch (err) {
+          cameraError.value = true;
         }
       };
 
       const toggleCamera = async () => {
+        // Tampilkan loading dari SweetAlert
         Swal.fire({ title: 'Menukar Kamera...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        
         // Tukar state mode kamera
         cameraFacingMode.value = cameraFacingMode.value === 'environment' ? 'user' : 'environment';
         
-        // Hapus instance scanner lama
-        if (html5QrcodeScanner) {
-          await html5QrcodeScanner.clear().catch(e => {});
-          html5QrcodeScanner = null;
+        try {
+          // 1. Hapus instance scanner lama secara aman
+          if (html5QrcodeScanner) {
+            try {
+              if (html5QrcodeScanner.getState() !== 1) { // 1 = NOT_STARTED
+                await html5QrcodeScanner.stop(); // Matikan lensa lama
+              }
+            } catch(e) {}
+            html5QrcodeScanner.clear();
+            html5QrcodeScanner = null;
+          }
+          
+          // 2. Beri jeda hardware 300ms agar pelepasan lensa di tablet lancar
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
+          // 3. Mulai ulang dengan lensa baru (sistem akan menunggu gambar siap)
+          await initScanner(false);
+          
+          // 4. Tutup pop-up tepat setelah gambar kamera baru muncul
+          Swal.close();
+        } catch (err) {
+          Swal.close();
+          Swal.fire('Info', 'Kendala memuat lensa kamera. Silakan tekan tombol Restart Kamera warna merah.', 'warning');
         }
-        
-        // Mulai ulang dengan mode baru
-        initScanner(false);
-        setTimeout(() => Swal.close(), 800);
       };
 
       const stopScanner = () => {
-        if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
-          html5QrcodeScanner.pause(true); 
+        if (html5QrcodeScanner) {
+          try {
+             if (html5QrcodeScanner.getState() === 2) { // 2 = SCANNING
+                html5QrcodeScanner.pause(true); 
+             }
+          } catch(e) {}
         }
       };
 
