@@ -68,7 +68,13 @@
         
         <div class="bg-gray-900 rounded-2xl p-2 mb-4 relative shadow-inner">
           <div id="reader" class="w-full aspect-square md:aspect-video rounded-xl"></div>
-          <button v-if="cameraError" @click="initScanner(true)" class="absolute inset-0 m-auto h-12 px-4 bg-red-600 text-white font-bold rounded-lg shadow-lg hover:bg-red-700 w-48">
+          
+          <!-- Tombol Switch Kamera Depan/Belakang -->
+          <button @click="toggleCamera" class="absolute bottom-4 right-4 h-12 w-12 flex items-center justify-center bg-gray-800/60 backdrop-blur-md text-white rounded-full shadow-lg hover:bg-gray-700 border border-gray-500 transition z-10" title="Tukar Kamera">
+            <i class="fa-solid fa-camera-rotate text-xl"></i>
+          </button>
+
+          <button v-if="cameraError" @click="initScanner(true)" class="absolute inset-0 m-auto h-12 px-4 bg-red-600 text-white font-bold rounded-lg shadow-lg hover:bg-red-700 w-48 z-10">
             <i class="fa-solid fa-rotate-right mr-2"></i>Restart Kamera
           </button>
         </div>
@@ -285,7 +291,7 @@
 <script>
   // ====================================================================================
   // URL BACKEND GOOGLE APPS SCRIPT ANDA
-  const API_URL = 'https://script.google.com/macros/s/AKfycbyNLhQWntq-kkhsq8zwrWvxI-aBQFqsVJCveLmk9LvSF2wKXS4hxvHGjZfY0ZwSlv5Ndw/exec';
+  const API_URL = 'URL_WEB_APP_ANDA_DISINI';
   // ====================================================================================
 
   const { createApp, ref, reactive, computed, onMounted, nextTick } = Vue;
@@ -302,6 +308,7 @@
       let html5QrcodeScanner = null;
       let isScanning = false;
       const cameraError = ref(false);
+      const cameraFacingMode = ref('environment'); // Mode kamera default (environment = belakang, user = depan)
 
       // Rekap Publik
       const publicData = ref([]);
@@ -352,7 +359,7 @@
         if (!html5QrcodeScanner) {
           html5QrcodeScanner = new Html5Qrcode("reader");
           html5QrcodeScanner.start(
-            { facingMode: "environment" },
+            { facingMode: cameraFacingMode.value }, // Menggunakan state kamera (depan/belakang)
             { fps: 10, qrbox: { width: 250, height: 250 } },
             onScanSuccess,
             (error) => { /* abaikan error latar belakang */ }
@@ -363,6 +370,22 @@
         } else if (html5QrcodeScanner.getState() === 3) {
           html5QrcodeScanner.resume();
         }
+      };
+
+      const toggleCamera = async () => {
+        Swal.fire({ title: 'Menukar Kamera...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        // Tukar state mode kamera
+        cameraFacingMode.value = cameraFacingMode.value === 'environment' ? 'user' : 'environment';
+        
+        // Hapus instance scanner lama
+        if (html5QrcodeScanner) {
+          await html5QrcodeScanner.clear().catch(e => {});
+          html5QrcodeScanner = null;
+        }
+        
+        // Mulai ulang dengan mode baru
+        initScanner(false);
+        setTimeout(() => Swal.close(), 800);
       };
 
       const stopScanner = () => {
@@ -563,7 +586,7 @@
       onMounted(() => { if (currentTab.value === 'scan') { setTimeout(() => initScanner(false), 500); } });
 
       return {
-        currentTab, isLoading, listKelas, changeTab, tipeAbsen, cameraError, initScanner,
+        currentTab, isLoading, listKelas, changeTab, tipeAbsen, cameraError, initScanner, toggleCamera,
         filterRekap, publicData, filteredPublicRecap, loadPublicRecap,
         adminToken, adminPwd, adminMenu, loginAdmin, logoutAdmin,
         dataAbsen, dataSiswa, config, filterAdmin, stats, filteredAdminRecap, filteredStudentsForManual,
